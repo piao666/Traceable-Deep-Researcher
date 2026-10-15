@@ -1,0 +1,34 @@
+name: traceable-deep-researcher
+services:
+  research:
+    image: traceable-deep-researcher:local
+    pull_policy: build
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REPORT_STORE_PATH: /usr/src/app/data/reports.json
+    volumes:
+      - ./my-docs:/usr/src/app/my-docs
+      - ./outputs:/usr/src/app/outputs
+      - ./logs:/usr/src/app/logs
+      - ./data:/usr/src/app/data
+    ports:
+      - "${TDR_API_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  web:
+    profiles: ["web"]
+    image: traceable-deep-researcher-web:local
+    pull_policy: build
+    build:
+      context: frontend/nextjs
+      args:
+        NEXT_PUBLIC_TDR_API_URL: ${NEXT_PUBLIC_TDR_API_URL:-http://localhost:8000}
+    environment:
+      BACKEND_URL: http://research:8000
+    depends_on: [research]
+    ports:
+      - "${TDR_WEB_PORT:-3000}:3000"
+    restart: unless-stopped

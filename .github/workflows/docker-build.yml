@@ -1,0 +1,12 @@
+name: Docker build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --profile web config --quiet
+      - run: docker compose --profile web build

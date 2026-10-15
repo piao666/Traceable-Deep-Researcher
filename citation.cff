@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "Cite this derivative project and acknowledge its upstream implementation; see UPSTREAM.md."
+title: "Traceable Deep Researcher"
+version: 0.1.0
+authors:
+  - name: Piao666
+    email: dahaipiao9@gmail.com
+repository-code: https://github.com/piao666/Traceable-Deep-Researcher
+license: Apache-2.0
