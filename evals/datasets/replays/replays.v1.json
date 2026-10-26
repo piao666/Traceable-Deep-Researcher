@@ -1,0 +1,1230 @@
+{
+  "tools": [
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "比较虚构的松桥站和海灯站的储能容量，并说明差值。"
+      },
+      "context": "task_comparison_zh",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "comparison_zh_s1",
+            "url": "https://fixtures.invalid/comparison_zh/1",
+            "title": "Synthetic comparison_zh document 1",
+            "text": "松桥站储能容量为12兆瓦时。海灯站储能容量为18兆瓦时。",
+            "sha256": "e9635e9aca53c50e85277608f4e11226bc767f3ecc7fdad73a2ae5854df82621"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "比较虚构的松桥站和海灯站的储能容量，并说明差值。",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "comparison_zh_s1",
+                "url": "https://fixtures.invalid/comparison_zh/1",
+                "title": "Synthetic comparison_zh document 1",
+                "text": "松桥站储能容量为12兆瓦时。海灯站储能容量为18兆瓦时。",
+                "sha256": "e9635e9aca53c50e85277608f4e11226bc767f3ecc7fdad73a2ae5854df82621"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "task_comparison_zh",
+      "fixture_key": "output",
+      "result": {
+        "report": "海灯站为18兆瓦时，松桥站为12兆瓦时，海灯站多6兆瓦时。 [S1]\n\nRepeated citation: [S1](https://fixtures.invalid/comparison_zh/1) and [S1](https://fixtures.invalid/comparison_zh/1).\n\n## References\n- [S1](https://fixtures.invalid/comparison_zh/1)\n",
+        "sources": [
+          "https://fixtures.invalid/comparison_zh/1",
+          "https://fixtures.invalid/comparison_zh/1"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "When does the fictional Cedar Hall reopen as of 2026-03-10? Resolve the two notices."
+      },
+      "context": "task_date_conflict_en",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "date_conflict_en_s1",
+            "url": "https://fixtures.invalid/date_conflict_en/1",
+            "title": "Synthetic date_conflict_en document 1",
+            "text": "Notice dated 2026-02-01: Cedar Hall reopens on 2026-04-01.",
+            "sha256": "4c5d038baa47704d4c1ab3128dac6e67f21ab7b26bb33d0425a0f44d3eab03ec"
+          },
+          {
+            "source_id": "date_conflict_en_s2",
+            "url": "https://fixtures.invalid/date_conflict_en/2",
+            "title": "Synthetic date_conflict_en document 2",
+            "text": "Correction dated 2026-03-05: Cedar Hall now reopens on 2026-04-15; this replaces the February notice.",
+            "sha256": "6ed37787883f39c206b94606dd35193e38da816e0a292f5ed0d9963091026a44"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "When does the fictional Cedar Hall reopen as of 2026-03-10? Resolve the two notices.",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "date_conflict_en_s1",
+                "url": "https://fixtures.invalid/date_conflict_en/1",
+                "title": "Synthetic date_conflict_en document 1",
+                "text": "Notice dated 2026-02-01: Cedar Hall reopens on 2026-04-01.",
+                "sha256": "4c5d038baa47704d4c1ab3128dac6e67f21ab7b26bb33d0425a0f44d3eab03ec"
+              },
+              {
+                "source_id": "date_conflict_en_s2",
+                "url": "https://fixtures.invalid/date_conflict_en/2",
+                "title": "Synthetic date_conflict_en document 2",
+                "text": "Correction dated 2026-03-05: Cedar Hall now reopens on 2026-04-15; this replaces the February notice.",
+                "sha256": "6ed37787883f39c206b94606dd35193e38da816e0a292f5ed0d9963091026a44"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "task_date_conflict_en",
+      "fixture_key": "output",
+      "result": {
+        "report": "Cedar Hall reopens on 2026-04-15 according to the March correction, which replaces the earlier April 1 date. [S2]",
+        "sources": [
+          "https://fixtures.invalid/date_conflict_en/1",
+          "https://fixtures.invalid/date_conflict_en/2"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "虚构的青舟试验预算是多少？请仅依据给定材料回答。"
+      },
+      "context": "task_missing_evidence_zh",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "missing_evidence_zh_s1",
+            "url": "https://fixtures.invalid/missing_evidence_zh/1",
+            "title": "Synthetic missing_evidence_zh document 1",
+            "text": "青舟试验于2026年2月启动。该摘要没有披露预算。",
+            "sha256": "33a8892e456e62642491bb5c40da9f84e09a8cc29b5bfb791ad8bc0c341ae526"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "虚构的青舟试验预算是多少？请仅依据给定材料回答。",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "missing_evidence_zh_s1",
+                "url": "https://fixtures.invalid/missing_evidence_zh/1",
+                "title": "Synthetic missing_evidence_zh document 1",
+                "text": "青舟试验于2026年2月启动。该摘要没有披露预算。",
+                "sha256": "33a8892e456e62642491bb5c40da9f84e09a8cc29b5bfb791ad8bc0c341ae526"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "task_missing_evidence_zh",
+      "fixture_key": "output",
+      "result": {
+        "report": "给定材料没有披露青舟试验预算，因此无法确定金额。 [S1]",
+        "sources": [
+          "https://fixtures.invalid/missing_evidence_zh/1"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "Find the publication date of the fictional Silver Orchard protocol from the supplied search."
+      },
+      "context": "task_empty_results_en",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "Find the publication date of the fictional Silver Orchard protocol from the supplied search.",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": []
+          }
+        ]
+      },
+      "context": "task_empty_results_en",
+      "fixture_key": "output",
+      "result": {
+        "report": "The supplied search returned no results. I cannot establish a publication date.",
+        "sources": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "核实虚构的远湾观测点开放时间。"
+      },
+      "context": "task_tool_error_zh",
+      "fixture_key": "lookup",
+      "result": {
+        "error": {
+          "code": "SYNTHETIC_TOOL_FAILURE",
+          "message": "Synthetic offline retrieval failure."
+        },
+        "documents": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "核实虚构的远湾观测点开放时间。",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "error": {
+              "code": "SYNTHETIC_TOOL_FAILURE",
+              "message": "Synthetic offline retrieval failure."
+            },
+            "documents": []
+          }
+        ]
+      },
+      "context": "task_tool_error_zh",
+      "fixture_key": "output",
+      "result": {
+        "report": "检索工具返回离线夹具错误，当前没有可核实的材料，无法确认开放时间。",
+        "sources": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "What was the fictional Amber Ferry fare as of 2026-03-10?"
+      },
+      "context": "task_as_of_en",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "as_of_en_s1",
+            "url": "https://fixtures.invalid/as_of_en/1",
+            "title": "Synthetic as_of_en document 1",
+            "text": "Schedule effective 2026-01-01: Amber Ferry adult fare is 7 tokens.",
+            "sha256": "e53995053d80b136184f220b22e1f1a18ac0f9a6aa8462e77d915a1169c474ae"
+          },
+          {
+            "source_id": "as_of_en_s2",
+            "url": "https://fixtures.invalid/as_of_en/2",
+            "title": "Synthetic as_of_en document 2",
+            "text": "Schedule effective 2026-05-01: Amber Ferry adult fare will be 9 tokens.",
+            "sha256": "a4aab00ac50c5bcc08269a4491874e9a26a9c2ac5ec86e9181367305d4cf5083"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "What was the fictional Amber Ferry fare as of 2026-03-10?",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "as_of_en_s1",
+                "url": "https://fixtures.invalid/as_of_en/1",
+                "title": "Synthetic as_of_en document 1",
+                "text": "Schedule effective 2026-01-01: Amber Ferry adult fare is 7 tokens.",
+                "sha256": "e53995053d80b136184f220b22e1f1a18ac0f9a6aa8462e77d915a1169c474ae"
+              },
+              {
+                "source_id": "as_of_en_s2",
+                "url": "https://fixtures.invalid/as_of_en/2",
+                "title": "Synthetic as_of_en document 2",
+                "text": "Schedule effective 2026-05-01: Amber Ferry adult fare will be 9 tokens.",
+                "sha256": "a4aab00ac50c5bcc08269a4491874e9a26a9c2ac5ec86e9181367305d4cf5083"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "task_as_of_en",
+      "fixture_key": "output",
+      "result": {
+        "report": "As of 2026-03-10, the adult fare is 7 tokens. The announced 9-token fare takes effect on 2026-05-01. [S1] [S2]",
+        "sources": [
+          "https://fixtures.invalid/as_of_en/1",
+          "https://fixtures.invalid/as_of_en/2"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "虚构的星帆温室新增了多少株蓝叶草？"
+      },
+      "context": "task_unicode_zh",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "unicode_zh_s1",
+            "url": "https://fixtures.invalid/unicode_zh/1",
+            "title": "Synthetic unicode_zh document 1",
+            "text": "记录🌱：星帆温室新增了23株蓝叶草。",
+            "sha256": "0e5983ab7863cf7dec87d7c9c77415be01725ccf2b36b00270f3a880ff387b58"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "虚构的星帆温室新增了多少株蓝叶草？",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "unicode_zh_s1",
+                "url": "https://fixtures.invalid/unicode_zh/1",
+                "title": "Synthetic unicode_zh document 1",
+                "text": "记录🌱：星帆温室新增了23株蓝叶草。",
+                "sha256": "0e5983ab7863cf7dec87d7c9c77415be01725ccf2b36b00270f3a880ff387b58"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "task_unicode_zh",
+      "fixture_key": "output",
+      "result": {
+        "report": "星帆温室新增了23株蓝叶草。 [S1]",
+        "sources": [
+          "https://fixtures.invalid/unicode_zh/1"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "Compare the fictional Lumen and Drift sensors on sampling rate and battery life. Mark missing measurements."
+      },
+      "context": "task_comparison_en",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "comparison_en_s1",
+            "url": "https://fixtures.invalid/comparison_en/1",
+            "title": "Synthetic comparison_en document 1",
+            "text": "Lumen sensor samples at 4 Hz; battery life is 30 hours.",
+            "sha256": "5807a94009527ecc9b864f7bea3129c832658a7174b210dc6d386920bd38e937"
+          },
+          {
+            "source_id": "comparison_en_s2",
+            "url": "https://fixtures.invalid/comparison_en/2",
+            "title": "Synthetic comparison_en document 2",
+            "text": "Drift sensor samples at 6 Hz. Battery life has not been measured.",
+            "sha256": "233af828becee5bf5520d2ff85fd2e6b7e33c5e31dc40bdc6baa352ceac63603"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.model",
+      "arguments": {
+        "input": {
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          },
+          "query": "Compare the fictional Lumen and Drift sensors on sampling rate and battery life. Mark missing measurements.",
+          "as_of": "2026-03-10",
+          "report_type": "research_report",
+          "source_policy": {
+            "allowed_kinds": [
+              "local"
+            ],
+            "network_allowed": false
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "comparison_en_s1",
+                "url": "https://fixtures.invalid/comparison_en/1",
+                "title": "Synthetic comparison_en document 1",
+                "text": "Lumen sensor samples at 4 Hz; battery life is 30 hours.",
+                "sha256": "5807a94009527ecc9b864f7bea3129c832658a7174b210dc6d386920bd38e937"
+              },
+              {
+                "source_id": "comparison_en_s2",
+                "url": "https://fixtures.invalid/comparison_en/2",
+                "title": "Synthetic comparison_en document 2",
+                "text": "Drift sensor samples at 6 Hz. Battery life has not been measured.",
+                "sha256": "233af828becee5bf5520d2ff85fd2e6b7e33c5e31dc40bdc6baa352ceac63603"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "task_comparison_en",
+      "fixture_key": "output",
+      "result": {
+        "report": "Drift samples at 6 Hz versus Lumen at 4 Hz. Lumen runs for 30 hours; Drift battery life is unmeasured, so a battery comparison is unavailable. [S1] [S2]",
+        "sources": [
+          "https://fixtures.invalid/comparison_en/1",
+          "https://fixtures.invalid/comparison_en/2"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "比较虚构的松桥站和海灯站的储能容量，并说明差值。"
+      },
+      "context": "agent_planner",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "comparison_zh_s1",
+            "url": "https://fixtures.invalid/comparison_zh/1",
+            "title": "Synthetic comparison_zh document 1",
+            "text": "松桥站储能容量为12兆瓦时。海灯站储能容量为18兆瓦时。",
+            "sha256": "e9635e9aca53c50e85277608f4e11226bc767f3ecc7fdad73a2ae5854df82621"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "planner",
+          "input_artifact": {
+            "query": "比较虚构的松桥站和海灯站的储能容量，并说明差值。",
+            "documents": [
+              {
+                "source_id": "comparison_zh_s1",
+                "url": "https://fixtures.invalid/comparison_zh/1",
+                "title": "Synthetic comparison_zh document 1",
+                "text": "松桥站储能容量为12兆瓦时。海灯站储能容量为18兆瓦时。"
+              }
+            ]
+          },
+          "allowed_tools": [
+            "fixture.search"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "comparison_zh_s1",
+                "url": "https://fixtures.invalid/comparison_zh/1",
+                "title": "Synthetic comparison_zh document 1",
+                "text": "松桥站储能容量为12兆瓦时。海灯站储能容量为18兆瓦时。",
+                "sha256": "e9635e9aca53c50e85277608f4e11226bc767f3ecc7fdad73a2ae5854df82621"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "agent_planner",
+      "fixture_key": "output",
+      "result": {
+        "plan": [
+          "Compare both stations' capacities",
+          "Cite the supplied evidence",
+          "Calculate the capacity difference"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "When does the fictional Cedar Hall reopen as of 2026-03-10? Resolve the two notices."
+      },
+      "context": "agent_retriever",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "date_conflict_en_s1",
+            "url": "https://fixtures.invalid/date_conflict_en/1",
+            "title": "Synthetic date_conflict_en document 1",
+            "text": "Notice dated 2026-02-01: Cedar Hall reopens on 2026-04-01.",
+            "sha256": "4c5d038baa47704d4c1ab3128dac6e67f21ab7b26bb33d0425a0f44d3eab03ec"
+          },
+          {
+            "source_id": "date_conflict_en_s2",
+            "url": "https://fixtures.invalid/date_conflict_en/2",
+            "title": "Synthetic date_conflict_en document 2",
+            "text": "Correction dated 2026-03-05: Cedar Hall now reopens on 2026-04-15; this replaces the February notice.",
+            "sha256": "6ed37787883f39c206b94606dd35193e38da816e0a292f5ed0d9963091026a44"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "retriever",
+          "input_artifact": {
+            "query": "When does the fictional Cedar Hall reopen as of 2026-03-10? Resolve the two notices.",
+            "documents": [
+              {
+                "source_id": "date_conflict_en_s1",
+                "url": "https://fixtures.invalid/date_conflict_en/1",
+                "title": "Synthetic date_conflict_en document 1",
+                "text": "Notice dated 2026-02-01: Cedar Hall reopens on 2026-04-01."
+              },
+              {
+                "source_id": "date_conflict_en_s2",
+                "url": "https://fixtures.invalid/date_conflict_en/2",
+                "title": "Synthetic date_conflict_en document 2",
+                "text": "Correction dated 2026-03-05: Cedar Hall now reopens on 2026-04-15; this replaces the February notice."
+              }
+            ]
+          },
+          "allowed_tools": [
+            "fixture.search"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "date_conflict_en_s1",
+                "url": "https://fixtures.invalid/date_conflict_en/1",
+                "title": "Synthetic date_conflict_en document 1",
+                "text": "Notice dated 2026-02-01: Cedar Hall reopens on 2026-04-01.",
+                "sha256": "4c5d038baa47704d4c1ab3128dac6e67f21ab7b26bb33d0425a0f44d3eab03ec"
+              },
+              {
+                "source_id": "date_conflict_en_s2",
+                "url": "https://fixtures.invalid/date_conflict_en/2",
+                "title": "Synthetic date_conflict_en document 2",
+                "text": "Correction dated 2026-03-05: Cedar Hall now reopens on 2026-04-15; this replaces the February notice.",
+                "sha256": "6ed37787883f39c206b94606dd35193e38da816e0a292f5ed0d9963091026a44"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "agent_retriever",
+      "fixture_key": "output",
+      "result": {
+        "sources": [
+          "https://fixtures.invalid/date_conflict_en/1",
+          "https://fixtures.invalid/date_conflict_en/2"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "虚构的青舟试验预算是多少？请仅依据给定材料回答。"
+      },
+      "context": "agent_context_selector",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "missing_evidence_zh_s1",
+            "url": "https://fixtures.invalid/missing_evidence_zh/1",
+            "title": "Synthetic missing_evidence_zh document 1",
+            "text": "青舟试验于2026年2月启动。该摘要没有披露预算。",
+            "sha256": "33a8892e456e62642491bb5c40da9f84e09a8cc29b5bfb791ad8bc0c341ae526"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "context_selector",
+          "input_artifact": {
+            "query": "虚构的青舟试验预算是多少？请仅依据给定材料回答。",
+            "documents": [
+              {
+                "source_id": "missing_evidence_zh_s1",
+                "url": "https://fixtures.invalid/missing_evidence_zh/1",
+                "title": "Synthetic missing_evidence_zh document 1",
+                "text": "青舟试验于2026年2月启动。该摘要没有披露预算。"
+              }
+            ]
+          },
+          "allowed_tools": [
+            "fixture.search"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "missing_evidence_zh_s1",
+                "url": "https://fixtures.invalid/missing_evidence_zh/1",
+                "title": "Synthetic missing_evidence_zh document 1",
+                "text": "青舟试验于2026年2月启动。该摘要没有披露预算。",
+                "sha256": "33a8892e456e62642491bb5c40da9f84e09a8cc29b5bfb791ad8bc0c341ae526"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "agent_context_selector",
+      "fixture_key": "output",
+      "result": {
+        "evidence_ids": [
+          "missing_evidence_zh_e1"
+        ],
+        "missing": [
+          "预算"
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "Find the publication date of the fictional Silver Orchard protocol from the supplied search."
+      },
+      "context": "agent_writer",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "writer",
+          "input_artifact": {
+            "query": "Find the publication date of the fictional Silver Orchard protocol from the supplied search.",
+            "documents": []
+          },
+          "allowed_tools": [
+            "fixture.search"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "documents": []
+          }
+        ]
+      },
+      "context": "agent_writer",
+      "fixture_key": "output",
+      "result": {
+        "report": "The supplied search returned no results. I cannot establish a publication date.",
+        "abstained": true
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "核实虚构的远湾观测点开放时间。"
+      },
+      "context": "agent_reviewer",
+      "fixture_key": "lookup",
+      "result": {
+        "error": {
+          "code": "SYNTHETIC_TOOL_FAILURE",
+          "message": "Synthetic offline retrieval failure."
+        },
+        "documents": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "reviewer",
+          "input_artifact": {
+            "query": "核实虚构的远湾观测点开放时间。",
+            "documents": []
+          },
+          "allowed_tools": [
+            "fixture.search"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "error": {
+              "code": "SYNTHETIC_TOOL_FAILURE",
+              "message": "Synthetic offline retrieval failure."
+            },
+            "documents": []
+          }
+        ]
+      },
+      "context": "agent_reviewer",
+      "fixture_key": "output",
+      "result": {
+        "issues": [
+          "无法核实开放时间；检索返回错误。"
+        ],
+        "needs_revision": true
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.search",
+      "arguments": {
+        "query": "What was the fictional Amber Ferry fare as of 2026-03-10?"
+      },
+      "context": "agent_reviser",
+      "fixture_key": "lookup",
+      "result": {
+        "documents": [
+          {
+            "source_id": "as_of_en_s1",
+            "url": "https://fixtures.invalid/as_of_en/1",
+            "title": "Synthetic as_of_en document 1",
+            "text": "Schedule effective 2026-01-01: Amber Ferry adult fare is 7 tokens.",
+            "sha256": "e53995053d80b136184f220b22e1f1a18ac0f9a6aa8462e77d915a1169c474ae"
+          },
+          {
+            "source_id": "as_of_en_s2",
+            "url": "https://fixtures.invalid/as_of_en/2",
+            "title": "Synthetic as_of_en document 2",
+            "text": "Schedule effective 2026-05-01: Amber Ferry adult fare will be 9 tokens.",
+            "sha256": "a4aab00ac50c5bcc08269a4491874e9a26a9c2ac5ec86e9181367305d4cf5083"
+          }
+        ]
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "reviser",
+          "input_artifact": {
+            "query": "What was the fictional Amber Ferry fare as of 2026-03-10?",
+            "documents": [
+              {
+                "source_id": "as_of_en_s1",
+                "url": "https://fixtures.invalid/as_of_en/1",
+                "title": "Synthetic as_of_en document 1",
+                "text": "Schedule effective 2026-01-01: Amber Ferry adult fare is 7 tokens."
+              },
+              {
+                "source_id": "as_of_en_s2",
+                "url": "https://fixtures.invalid/as_of_en/2",
+                "title": "Synthetic as_of_en document 2",
+                "text": "Schedule effective 2026-05-01: Amber Ferry adult fare will be 9 tokens."
+              }
+            ]
+          },
+          "allowed_tools": [
+            "fixture.search"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "documents": [
+              {
+                "source_id": "as_of_en_s1",
+                "url": "https://fixtures.invalid/as_of_en/1",
+                "title": "Synthetic as_of_en document 1",
+                "text": "Schedule effective 2026-01-01: Amber Ferry adult fare is 7 tokens.",
+                "sha256": "e53995053d80b136184f220b22e1f1a18ac0f9a6aa8462e77d915a1169c474ae"
+              },
+              {
+                "source_id": "as_of_en_s2",
+                "url": "https://fixtures.invalid/as_of_en/2",
+                "title": "Synthetic as_of_en document 2",
+                "text": "Schedule effective 2026-05-01: Amber Ferry adult fare will be 9 tokens.",
+                "sha256": "a4aab00ac50c5bcc08269a4491874e9a26a9c2ac5ec86e9181367305d4cf5083"
+              }
+            ]
+          }
+        ]
+      },
+      "context": "agent_reviser",
+      "fixture_key": "output",
+      "result": {
+        "report": "As of 2026-03-10, the adult fare is 7 tokens. The announced 9-token fare takes effect on 2026-05-01. [S1] [S2]"
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.mcp_catalog",
+      "arguments": {
+        "query": "虚构的星帆温室新增了多少株蓝叶草？"
+      },
+      "context": "agent_mcp_selector",
+      "fixture_key": "lookup",
+      "result": {
+        "tools": []
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "mcp_selector",
+          "input_artifact": {
+            "query": "虚构的星帆温室新增了多少株蓝叶草？",
+            "documents": [
+              {
+                "source_id": "unicode_zh_s1",
+                "url": "https://fixtures.invalid/unicode_zh/1",
+                "title": "Synthetic unicode_zh document 1",
+                "text": "记录🌱：星帆温室新增了23株蓝叶草。"
+              }
+            ]
+          },
+          "allowed_tools": [
+            "fixture.mcp_catalog"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "tools": []
+          }
+        ]
+      },
+      "context": "agent_mcp_selector",
+      "fixture_key": "output",
+      "result": {
+        "selected_tools": [],
+        "reason": "The supplied local source is sufficient; no external MCP call is needed."
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.status",
+      "arguments": {
+        "query": "Compare the fictional Lumen and Drift sensors on sampling rate and battery life. Mark missing measurements."
+      },
+      "context": "agent_orchestrator",
+      "fixture_key": "lookup",
+      "result": {
+        "available_sources": 2,
+        "stage": "ready"
+      },
+      "max_calls": 1
+    },
+    {
+      "tool_name": "fixture.node",
+      "arguments": {
+        "input": {
+          "node_kind": "orchestrator",
+          "input_artifact": {
+            "query": "Compare the fictional Lumen and Drift sensors on sampling rate and battery life. Mark missing measurements.",
+            "documents": [
+              {
+                "source_id": "comparison_en_s1",
+                "url": "https://fixtures.invalid/comparison_en/1",
+                "title": "Synthetic comparison_en document 1",
+                "text": "Lumen sensor samples at 4 Hz; battery life is 30 hours."
+              },
+              {
+                "source_id": "comparison_en_s2",
+                "url": "https://fixtures.invalid/comparison_en/2",
+                "title": "Synthetic comparison_en document 2",
+                "text": "Drift sensor samples at 6 Hz. Battery life has not been measured."
+              }
+            ]
+          },
+          "allowed_tools": [
+            "fixture.status"
+          ],
+          "budget": {
+            "max_tool_calls": 20,
+            "max_seconds": 300.0
+          }
+        },
+        "tool_results": [
+          {
+            "available_sources": 2,
+            "stage": "ready"
+          }
+        ]
+      },
+      "context": "agent_orchestrator",
+      "fixture_key": "output",
+      "result": {
+        "status": "completed",
+        "report": "Drift samples at 6 Hz versus Lumen at 4 Hz. Lumen runs for 30 hours; Drift battery life is unmeasured, so a battery comparison is unavailable. [S1] [S2]"
+      },
+      "max_calls": 1
+    }
+  ],
+  "task": {
+    "task_comparison_zh": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "比较虚构的松桥站和海灯站的储能容量，并说明差值。"
+          },
+          "context": "task_comparison_zh",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_date_conflict_en": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "When does the fictional Cedar Hall reopen as of 2026-03-10? Resolve the two notices."
+          },
+          "context": "task_date_conflict_en",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_missing_evidence_zh": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "虚构的青舟试验预算是多少？请仅依据给定材料回答。"
+          },
+          "context": "task_missing_evidence_zh",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_empty_results_en": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "Find the publication date of the fictional Silver Orchard protocol from the supplied search."
+          },
+          "context": "task_empty_results_en",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_tool_error_zh": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "核实虚构的远湾观测点开放时间。"
+          },
+          "context": "task_tool_error_zh",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_as_of_en": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "What was the fictional Amber Ferry fare as of 2026-03-10?"
+          },
+          "context": "task_as_of_en",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_unicode_zh": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "虚构的星帆温室新增了多少株蓝叶草？"
+          },
+          "context": "task_unicode_zh",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "task_comparison_en": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "Compare the fictional Lumen and Drift sensors on sampling rate and battery life. Mark missing measurements."
+          },
+          "context": "task_comparison_en",
+          "fixture_key": "lookup"
+        }
+      ]
+    }
+  },
+  "agent": {
+    "agent_planner": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "比较虚构的松桥站和海灯站的储能容量，并说明差值。"
+          },
+          "context": "agent_planner",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_retriever": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "When does the fictional Cedar Hall reopen as of 2026-03-10? Resolve the two notices."
+          },
+          "context": "agent_retriever",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_context_selector": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "虚构的青舟试验预算是多少？请仅依据给定材料回答。"
+          },
+          "context": "agent_context_selector",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_writer": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "Find the publication date of the fictional Silver Orchard protocol from the supplied search."
+          },
+          "context": "agent_writer",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_reviewer": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "核实虚构的远湾观测点开放时间。"
+          },
+          "context": "agent_reviewer",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_reviser": {
+      "calls": [
+        {
+          "tool_name": "fixture.search",
+          "arguments": {
+            "query": "What was the fictional Amber Ferry fare as of 2026-03-10?"
+          },
+          "context": "agent_reviser",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_mcp_selector": {
+      "calls": [
+        {
+          "tool_name": "fixture.mcp_catalog",
+          "arguments": {
+            "query": "虚构的星帆温室新增了多少株蓝叶草？"
+          },
+          "context": "agent_mcp_selector",
+          "fixture_key": "lookup"
+        }
+      ]
+    },
+    "agent_orchestrator": {
+      "calls": [
+        {
+          "tool_name": "fixture.status",
+          "arguments": {
+            "query": "Compare the fictional Lumen and Drift sensors on sampling rate and battery life. Mark missing measurements."
+          },
+          "context": "agent_orchestrator",
+          "fixture_key": "lookup"
+        }
+      ]
+    }
+  }
+}

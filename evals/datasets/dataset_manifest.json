@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "dataset_version": "1",
+  "task_cases": "task_cases.v1.jsonl",
+  "agent_cases": "agent_cases.v1.jsonl",
+  "sources": "source_bundles/sources.v1.json",
+  "replays": "replays/replays.v1.json",
+  "files": {
+    "task_cases.v1.jsonl": "1e6956541e18c75f1dd3883a52ffa9a915c8e3cad13b457a0338d7de40268024",
+    "agent_cases.v1.jsonl": "0b691274a6e6f29ff0a9702893c2f85d66cfd70b973f2664672712ad3fe9400c",
+    "source_bundles/sources.v1.json": "83af6afc4ff6e757b2192981d6202034861ef07a9881102daa37c9b4031d434b",
+    "replays/replays.v1.json": "3ee3e34b65da0803bf86b45a7ccf48fb12c2ef1622908ef52b763cd1905d2cd3"
+  }
+}

@@ -236,15 +236,17 @@ async def _llm_score_domains(domains: list[str], grader_model) -> list[dict]:
     prompt = _LLM_AUTHORITY_PROMPT.format(
         domains="\n".join(f"- {d}" for d in domains)
     )
-    try:
-        resp    = await grader_model.ainvoke(prompt)
-        results = _parse_json(resp.content)
-        return [
-            {"domain": r["domain"], "score": float(r["score"]), "tier": f"llm:{r.get('reason','')}"}
-            for r in results
-        ]
-    except Exception:
-        return [{"domain": d, "score": 0.4, "tier": "unknown"} for d in domains]
+    resp = await grader_model.ainvoke(prompt)
+    results = _parse_json(resp.content)
+    if (not isinstance(results, list) or not all(isinstance(row, dict) for row in results)
+            or len(results) != len(domains) or {row.get("domain") for row in results} != set(domains)):
+        raise ValueError("authority verdict must score each requested domain exactly once")
+    for row in results:
+        score = row.get("score")
+        if type(score) not in {int, float} or not math.isfinite(score) or not 0 <= score <= 1:
+            raise ValueError("invalid authority score")
+    return [{"domain": row["domain"], "score": float(row["score"]),
+             "tier": f"llm:{row.get('reason', '')}"} for row in results]
 
 
 async def source_authority(source_urls: list[str], grader_model=None) -> dict:
@@ -276,7 +278,12 @@ async def source_authority(source_urls: list[str], grader_model=None) -> dict:
         score_map = {}
         if grader_model:
             # Batch-score unique deferred domains in a single LLM call.
-            scored    = await _llm_score_domains(sorted(set(deferred)), grader_model)
+            try:
+                scored = await _llm_score_domains(sorted(set(deferred)), grader_model)
+            except Exception as exc:
+                return {"avg_authority_score": None, "breakdown": breakdown,
+                        "unscored_domains": sorted(set(deferred)),
+                        "error": f"Authority judging failed: {type(exc).__name__}: {exc}"}
             score_map = {s["domain"]: s for s in scored}
         for domain in deferred:
             entry = score_map.get(domain)
@@ -332,15 +339,17 @@ Return ONLY a JSON object: {{"covered": true}} or {{"covered": false}}.
 """.strip()
 
 
-async def _check_one_subtopic(subtopic: str, report: str, grader_model) -> bool:
+async def _check_one_subtopic(subtopic: str, report: str, grader_model) -> dict:
     """Judge a single subtopic's coverage independently (no batch effects)."""
     try:
         resp   = await grader_model.ainvoke(
             _COVERAGE_ONE_PROMPT.format(subtopic=subtopic, report=report[:12000]))
         result = _parse_json(resp.content)
-        return bool(result.get("covered", False))
-    except Exception:
-        return False
+        if not isinstance(result, dict) or type(result.get("covered")) is not bool:
+            raise ValueError("coverage verdict must contain a boolean covered field")
+        return {"covered": result["covered"]}
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 async def subtopic_coverage(query: str, report: str, grader_model, subtopics=None) -> dict:
@@ -368,20 +377,27 @@ async def subtopic_coverage(query: str, report: str, grader_model, subtopics=Non
                 "error":                  "Failed to parse subtopics from LLM",
             }
 
+    if not isinstance(subtopics, list) or not all(isinstance(s, str) and s.strip() for s in subtopics):
+        return {"expected_subtopics": [], "covered": [], "missing": [],
+                "subtopic_coverage_rate": None, "error": "Invalid subtopic list"}
+
     # Judge each subtopic INDEPENDENTLY (one call each, concurrent) so a
     # subtopic's verdict isn't swayed by the others in the same batch.
     flags   = await asyncio.gather(
         *(_check_one_subtopic(s, report, grader_model) for s in subtopics)
     )
-    covered = [s for s, ok in zip(subtopics, flags) if ok]
-    missing = [s for s, ok in zip(subtopics, flags) if not ok]
+    covered = [s for s, verdict in zip(subtopics, flags) if verdict.get("covered") is True]
+    missing = [s for s, verdict in zip(subtopics, flags) if verdict.get("covered") is False]
+    errors = [{"subtopic": s, "error": verdict["error"]}
+              for s, verdict in zip(subtopics, flags) if "error" in verdict]
 
     total = len(subtopics)
     return {
         "expected_subtopics":     subtopics,
         "covered":                covered,
         "missing":                missing,
-        "subtopic_coverage_rate": round(len(covered) / total, 3) if total else 0.0,
+        "subtopic_coverage_rate": None if errors else (round(len(covered) / total, 3) if total else 0.0),
+        **({"error": "Subtopic judging failed", "judge_errors": errors} if errors else {}),
     }
 
 
@@ -458,14 +474,17 @@ async def _verify_one_claim(claim: str, context_text: str, grader_model) -> dict
             )
         )
         result = _parse_json(resp.content)
-        if isinstance(result, list) and result:
-            return result[0]
-        if isinstance(result, dict):
-            return result
-    except Exception:
-        pass
-    return {"claim": claim, "category": "unsupported", "score": 0.0,
-            "reason": "verification failed"}
+        if isinstance(result, list) and len(result) == 1:
+            result = result[0]
+        if not isinstance(result, dict) or result.get("category") not in {"supported", "inferred", "unsupported"}:
+            raise ValueError("invalid claim verification category")
+        score = result.get("score")
+        if type(score) not in {int, float} or not math.isfinite(score) or not 0 <= score <= 1:
+            raise ValueError("invalid claim verification score")
+        return {**result, "claim": claim, "score": float(score)}
+    except Exception as exc:
+        return {"claim": claim, "category": "error", "score": None,
+                "reason": "verification failed", "error": f"{type(exc).__name__}: {exc}"}
 
 
 async def unsupported_claim(report: str, context, grader_model, claims=None) -> dict:
@@ -497,6 +516,10 @@ async def unsupported_claim(report: str, context, grader_model, claims=None) -> 
                 "breakdown": [], "error": f"Claim extraction failed: {e}",
             }
 
+    if not isinstance(claims, list) or not all(isinstance(c, str) and c.strip() for c in claims):
+        return {"total_claims": 0, "avg_claim_score": None, "unsupported_claim_rate": None,
+                "inferred_claim_rate": None, "breakdown": [], "error": "Invalid claim list"}
+
     if not claims:
         return {
             "total_claims": 0, "avg_claim_score": 0.0,
@@ -515,9 +538,10 @@ async def unsupported_claim(report: str, context, grader_model, claims=None) -> 
     supported_l   = [c for c in scored_claims if c.get("category") == "supported"]
     inferred_l    = [c for c in scored_claims if c.get("category") == "inferred"]
     unsupported_l = [c for c in scored_claims if c.get("category") == "unsupported"]
+    errors = [c for c in scored_claims if "error" in c]
 
     total     = len(scored_claims)
-    avg_score = round(sum(float(c.get("score", 0.0)) for c in scored_claims) / total, 3) if total else 0.0
+    avg_score = None if errors else (round(sum(c["score"] for c in scored_claims) / total, 3) if total else 0.0)
 
     return {
         "total_claims":           total,
@@ -525,13 +549,14 @@ async def unsupported_claim(report: str, context, grader_model, claims=None) -> 
         "inferred_count":         len(inferred_l),
         "unsupported_count":      len(unsupported_l),
         "avg_claim_score":        avg_score,
-        "unsupported_claim_rate": round(len(unsupported_l) / total, 3) if total else 0.0,
-        "inferred_claim_rate":    round(len(inferred_l)    / total, 3) if total else 0.0,
+        "unsupported_claim_rate": None if errors else (round(len(unsupported_l) / total, 3) if total else 0.0),
+        "inferred_claim_rate":    None if errors else (round(len(inferred_l) / total, 3) if total else 0.0),
+        **({"error": "Claim judging failed", "judge_errors": errors} if errors else {}),
         "breakdown": [
             {
                 "claim":    c.get("claim"),
                 "category": c.get("category"),
-                "score":    float(c.get("score", 0.0)),
+                "score":    c.get("score"),
                 "reason":   c.get("reason", ""),
             }
             for c in scored_claims
@@ -549,7 +574,8 @@ def skipped(reason: str) -> dict:
 
 
 def is_skipped(value) -> bool:
-    return isinstance(value, dict) and value.get("status") == "skipped"
+    # Legacy callers use this as "has no numeric metric"; preserve error metadata.
+    return isinstance(value, dict) and value.get("status") in {"skipped", "error"}
 
 
 async def evaluate_report(
@@ -577,7 +603,8 @@ async def evaluate_report(
     results = await _suite_evaluate(
         sample, default_metrics(run_subtopic, run_unsupported), grader_model)
 
-    out = {r.name: (skipped(r.reason) if r.skipped else r.breakdown) for r in results}
+    out = {r.name: ({"status": r.status or "skipped", "reason": r.reason}
+                   if r.skipped else r.breakdown) for r in results}
     out.setdefault("subtopic_coverage", None)     # None when gated off by flag
     out.setdefault("unsupported_claim", None)
     return out

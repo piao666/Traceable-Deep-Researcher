@@ -1,0 +1,6 @@
+# Optional isolated M0 validation environment; no model/search API is used.
+# Runtime package requirements remain defined by pyproject.toml.
+pytest-asyncio==1.4.0
+langgraph==1.2.17
+langgraph-checkpoint==4.3.0
+langgraph-checkpoint-sqlite==3.1.2

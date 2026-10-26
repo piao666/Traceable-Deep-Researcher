@@ -47,6 +47,9 @@ class EvalSample:
     sources:   list[str] = field(default_factory=list)
     context:   str = ""
     reference: str | None = None
+    research_id: str | None = None
+    trace_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -59,12 +62,22 @@ class MetricResult:
     reason:       str = ""
     breakdown:    dict = field(default_factory=dict)  # full metric-specific detail
     skipped:      bool = False
+    # None keeps positional/legacy construction compatible; new adapters infer it.
+    status:       str | None = None
+    trace_refs: list[str] = field(default_factory=list)
 
     @classmethod
     def skip(cls, metric: "BaseMetric", reason: str) -> "MetricResult":
         return cls(name=metric.name, group=metric.group,
                    aligned_with=metric.aligned_with, score=None,
-                   reason=reason, skipped=True)
+                   reason=reason, skipped=True, status="skipped")
+
+    @classmethod
+    def error(cls, metric: "BaseMetric", reason: str, *, breakdown: dict | None = None) -> "MetricResult":
+        # skipped remains true for old consumers that only understand scored/unscored.
+        return cls(name=metric.name, group=metric.group, aligned_with=metric.aligned_with,
+                   score=None, reason=reason, skipped=True, status="error",
+                   breakdown=dict(breakdown or {}))
 
 
 class BaseMetric:

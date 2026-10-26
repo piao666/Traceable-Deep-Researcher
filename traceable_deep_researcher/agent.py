@@ -22,6 +22,7 @@ from .config import Config
 from .llm_provider import GenericLLMProvider
 from .memory import Memory
 from .prompts import get_prompt_family
+from .runtime import RunContext
 from .skills.browser import BrowserManager
 from .skills.context_manager import ContextManager
 from .skills.curator import SourceCurator
@@ -80,6 +81,7 @@ class TraceableDeepResearcher:
         mcp_configs: list[dict] | None = None,
         mcp_max_iterations: int | None = None,
         mcp_strategy: str | None = None,
+        run_context: RunContext | None = None,
         **kwargs
     ):
         """
@@ -134,8 +136,10 @@ class TraceableDeepResearcher:
                 - "fast" (default): Run MCP once with original query for best performance
                 - "deep": Run MCP for all sub-queries for maximum thoroughness  
                 - "disabled": Skip MCP entirely, use only web retrievers
+            run_context: Optional task/span identity and injected runtime services.
         """
         self.kwargs = kwargs
+        self.run_context = run_context
         self.query = query
         self.report_type = report_type
         self.cfg = Config(config_path)

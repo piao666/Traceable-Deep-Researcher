@@ -24,6 +24,7 @@ my-docs/
 
 #Ignore pycache
 **/__pycache__/
+.pytest_cache/
 
 #Ignore mypy cache
 .mypy_cache/
@@ -65,3 +66,11 @@ CURSOR_RULES.md
 
 # Track the self-hosted UI dependency lockfile.
 !frontend/nextjs/package-lock.json
+
+# Isolated local Graphify analysis runtime and transient extraction state.
+/.venv-graphify/
+/graphify-out/cache/
+/graphify-out/.graphify*
+
+# Local evaluation runs (reports, manifests and replay output).
+/evals/results/

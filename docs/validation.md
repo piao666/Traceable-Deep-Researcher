@@ -53,3 +53,39 @@ checking package sizes and hashes. The helper is not part of the application.
 
 No real model/search-provider research request was made during validation.
 No package, image or Git commit was published to a remote registry/repository.
+
+## M0 contracts and offline baseline — 2026-10-25
+
+- Completed 154 targeted offline tests covering runtime/task contracts, dataset
+  integrity, task/node engineering replay, evaluator failures, SQLite/LangGraph
+  compatibility probes and the existing 39 quality-metric tests; no skips.
+- Python compilation and Git whitespace checks passed.
+- Next.js production build, lint and TypeScript checks passed with the existing
+  lockfile and Dockerfile's `npm ci --legacy-peer-deps` installation rule.
+- The shared JSON request/event/subscription fixture passed TypeScript checking;
+  an event-version-2 negative control was rejected.
+- Eight synthetic task cases and eight node cases passed offline engineering
+  replay. These are fixed-output contract checks, not measured model quality.
+- A LangGraph SQLite interrupt resumed in a separate Python process. This is an
+  isolated compatibility probe, not production task recovery.
+- No real research model, search provider or paid judge was called. No production
+  API/WS persistence migration was performed and no implementation was committed
+  or pushed during this stage.
+
+See [M0 execution record](m0-implementation-plan.zh-CN.md) for scope, commands,
+environment constraints and review corrections, and [evaluation usage](evaluation.md)
+for reproduction instructions.
+
+## M0 pre-commit recheck — 2026-10-26
+
+- All 154 targeted offline tests passed again after dataset line-ending fixes
+  in 19.31 seconds, with no skips.
+- Pinned dataset JSON/JSONL files now use LF via `.gitattributes`; manifest pins
+  were refreshed and verified against the actual staged Git blobs.
+- Shared TypeScript contract fixture, dataset validation (8 task / 8 agent cases)
+  and Git whitespace checks passed again.
+- The production build result above remains the 2026-10-25 validation; it was not
+  rerun for the task-list update.
+- The user authorized committing and pushing the M0 implementation and updated
+  task lists. Generated Graphify outputs, evaluation runs, caches and databases
+  are excluded from the commit.

@@ -70,6 +70,8 @@ class SourceAuthorityMetric(BaseMetric):
 
     async def measure(self, sample: EvalSample, grader_model=None) -> MetricResult:
         raw = await m.source_authority(sample.sources, grader_model=grader_model)
+        if "error" in raw:
+            return MetricResult.error(self, raw["error"], breakdown=raw)
         return MetricResult(
             name=self.name, group=self.group, aligned_with=self.aligned_with,
             score=raw["avg_authority_score"],
@@ -91,6 +93,8 @@ class SubtopicCoverageMetric(BaseMetric):
     async def measure(self, sample: EvalSample, grader_model=None) -> MetricResult:
         raw   = await m.subtopic_coverage(sample.query, sample.report, grader_model)
         score = raw.get("subtopic_coverage_rate")
+        if "error" in raw:
+            return MetricResult.error(self, raw["error"], breakdown=raw)
         if score is None:
             return MetricResult.skip(self, raw.get("error", "coverage unavailable"))
         return MetricResult(
@@ -116,6 +120,8 @@ class UnsupportedClaimMetric(BaseMetric):
             return MetricResult.skip(self, "no source context available")
         raw   = await m.unsupported_claim(sample.report, sample.context, grader_model)
         score = raw.get("avg_claim_score")
+        if "error" in raw:
+            return MetricResult.error(self, raw["error"], breakdown=raw)
         if score is None:
             return MetricResult.skip(self, raw.get("error", "scoring failed"))
         return MetricResult(
@@ -145,12 +151,11 @@ def default_metrics(run_subtopic: bool = True, run_unsupported: bool = True) -> 
 
 
 async def evaluate(sample: EvalSample, metrics: list[BaseMetric], grader_model=None) -> list[MetricResult]:
-    """Run each metric on the sample. A metric failure becomes a skipped
-    MetricResult rather than aborting the whole evaluation (DeepEval-style)."""
+    """Run each metric; operational failures are errors, not voluntary skips."""
     results: list[MetricResult] = []
     for metric in metrics:
         try:
             results.append(await metric.measure(sample, grader_model))
         except Exception as e:
-            results.append(MetricResult.skip(metric, f"{type(e).__name__}: {e}"))
+            results.append(MetricResult.error(metric, f"{type(e).__name__}: {e}"))
     return results

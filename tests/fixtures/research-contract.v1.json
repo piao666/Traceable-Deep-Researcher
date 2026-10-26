@@ -1,0 +1,31 @@
+{
+  "request": {
+    "task": "比较两份本地方案的成本与限制",
+    "report_type": "research_report",
+    "report_source": "local",
+    "tone": "Objective",
+    "source_urls": [],
+    "document_urls": ["local-plan-a", "local-plan-b"],
+    "query_domains": [],
+    "source_policy": {"allowed_kinds": ["local"], "network_allowed": false},
+    "budget": {"max_tool_calls": 20, "max_seconds": 300, "max_tokens": null, "max_cost_usd": null},
+    "mcp_enabled": false,
+    "mcp_config_refs": [],
+    "include_human_feedback": true
+  },
+  "event": {
+    "version": 1,
+    "research_id": "r-example-001",
+    "attempt_id": "a-example-001",
+    "seq": 1,
+    "type": "task.created",
+    "created_at": "2026-10-24T08:00:00Z",
+    "payload": {"status": "queued"}
+  },
+  "subscribe": {
+    "version": 1,
+    "type": "subscribe",
+    "research_id": "r-example-001",
+    "after_seq": 0
+  }
+}

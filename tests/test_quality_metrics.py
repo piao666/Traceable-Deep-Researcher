@@ -4,7 +4,7 @@ Unit tests for evals/quality_eval/metrics.py
 Covers:
   - Boundary conditions (empty inputs, zero values)
   - Correctness (math, domain parsing, rule table ordering)
-  - Error / robustness paths (bad LLM JSON, LLM failure fallback)
+  - Error / robustness paths (bad LLM JSON and explicit judge failures)
 
 Behavioral discrimination tests (good report > bad report) are handled by
 the benchmark runner (evals/quality_eval/benchmark.py) using real reports.
@@ -235,11 +235,12 @@ class TestSourceAuthorityRules(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(result["avg_authority_score"], 0.65)
         mock.ainvoke.assert_called_once()
 
-    async def test_llm_failure_falls_back_to_default(self):
+    async def test_configured_llm_failure_is_unscored(self):
         mock = AsyncMock()
         mock.ainvoke = AsyncMock(side_effect=Exception("timeout"))
         result = await source_authority(["https://obscuresite.io/article"], grader_model=mock)
-        self.assertAlmostEqual(result["avg_authority_score"], 0.4)
+        self.assertIsNone(result["avg_authority_score"])
+        self.assertIn("error", result)
 
 
 # ---------------------------------------------------------------------------
@@ -278,9 +279,8 @@ class TestSubtopicCoverage(unittest.IsolatedAsyncioTestCase):
         self.assertIn("error", result)
         self.assertIsNone(result.get("subtopic_coverage_rate"))
 
-    async def test_independent_subtopic_check_failure_marks_missing(self):
-        """With independent checks, a subtopic whose check fails is marked
-        missing (self-contained) rather than failing the whole evaluation."""
+    async def test_independent_subtopic_check_failure_is_unscored(self):
+        """A judge failure is not evidence that a subtopic is missing."""
         subtopics = ["A", "B"]
         gen_msg   = MagicMock(); gen_msg.content = json.dumps(subtopics)   # generate
         ok_msg    = MagicMock(); ok_msg.content  = json.dumps({"covered": True})
@@ -288,9 +288,11 @@ class TestSubtopicCoverage(unittest.IsolatedAsyncioTestCase):
         mock      = AsyncMock()
         mock.ainvoke = AsyncMock(side_effect=[gen_msg, ok_msg, bad_msg])
         result = await subtopic_coverage("query", "report", mock)
-        self.assertNotIn("error", result)
+        self.assertIn("error", result)
         self.assertEqual(result["expected_subtopics"], subtopics)
-        self.assertAlmostEqual(result["subtopic_coverage_rate"], 0.5)  # 1 ok, 1 failed→missing
+        self.assertIsNone(result["subtopic_coverage_rate"])
+        self.assertEqual(result["covered"], ["A"])
+        self.assertEqual(result["missing"], [])
 
 
 # ---------------------------------------------------------------------------
@@ -352,9 +354,8 @@ class TestUnsupportedClaim(unittest.IsolatedAsyncioTestCase):
         self.assertIn("error", result)
         self.assertIsNone(result.get("avg_claim_score"))
 
-    async def test_independent_verify_failure_marks_claim_unsupported(self):
-        """With independent scoring, a claim whose verify fails is marked
-        unsupported (self-contained) rather than failing the whole batch."""
+    async def test_independent_verify_failure_is_not_an_unsupported_claim(self):
+        """Operational failure must not become an unsupported zero score."""
         claims   = ["Claim A"]
         good_msg = MagicMock(); good_msg.content = json.dumps(claims)   # extract
         bad_msg  = MagicMock(); bad_msg.content  = "{{broken"           # verify A fails
@@ -362,8 +363,9 @@ class TestUnsupportedClaim(unittest.IsolatedAsyncioTestCase):
         mock.ainvoke = AsyncMock(side_effect=[good_msg, bad_msg])
         result = await unsupported_claim("report", "context", mock)
         self.assertEqual(result["total_claims"], 1)
-        self.assertEqual(result["unsupported_count"], 1)
-        self.assertNotIn("error", result)
+        self.assertEqual(result["unsupported_count"], 0)
+        self.assertIsNone(result["avg_claim_score"])
+        self.assertIn("error", result)
 
 
 # ---------------------------------------------------------------------------

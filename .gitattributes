@@ -1,0 +1,4 @@
+# Dataset pins hash exact bytes; keep fixtures stable across Windows and Linux.
+evals/datasets/**/*.json text eol=lf
+evals/datasets/*.json text eol=lf
+evals/datasets/*.jsonl text eol=lf

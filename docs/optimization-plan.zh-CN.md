@@ -1,6 +1,6 @@
 # Traceable Deep Researcher 四项优化实施方案
 
-> 执行说明：后续实施可使用 `superpowers:executing-plans`，按工作包逐项验证；本文只交付规划，不触发代码实施、提交或推送。复选框供实施时跟踪。
+> 执行说明：按工作包逐项实施和验证；复选框记录已验收步骤，阶段进度见第 8.1 节。提交与推送遵循用户授权。
 
 **目标**：形成可靠交付、交互闭环、关键结论可追溯和两层评测的自托管研究应用。
 
@@ -8,7 +8,9 @@
 
 **技术栈**：现有 Python/FastAPI、SQLAlchemy、LangGraph、Next.js/TypeScript、pytest；建议新增 SQLite 任务存储及前端测试工具，依赖版本在实施时锁定。
 
-创建日期：2026-10-23；补全日期：2026-10-24。状态：待实施的工程设计，本文不代表功能已完成。
+创建日期：2026-10-23；补全日期：2026-10-24；清单更新：2026-10-26。状态：M0 已验收，M1–M4 待实施。
+
+阶段更新（2026-10-25）：M0 的运行/评测契约、小型离线工程回放和技术风险小样已实施；详细范围、验收记录见 [M0 实施清单](m0-implementation-plan.zh-CN.md) 和 [评测使用说明](evaluation.md)。M1–M4 及下面各完整工作包的完成标准仍按原计划推进，不能将 M0 的固定产物检查当作模型研究质量。
 
 源码基线：`642a06c46ae4f05bc53d6114255a684d08a2d0ec`，本地工作分支 `codex/work`。依据为当前源码、[现有架构说明](architecture.md)以及本地 Graphify 图谱和链路梳理；图谱用于定位，实际行为以源码和后续测试为准。
 
@@ -427,11 +429,13 @@ canonical_text 的规则固定为 UTF-8 解码后标准化换行、保留剩余�
 
 **修改步骤**：
 
-- [ ] TaskCase 定义 case_id、dataset_version、split、query、as_of、report_type、source_policy、source_bundle、requirements、gold_facts、gold_evidence、budget、faults、tags。
+- [x] TaskCase 定义 case_id、dataset_version、split、query、as_of、report_type、source_policy、source_bundle、requirements、gold_facts、gold_evidence、budget、faults、tags。
 - [ ] AgentCase 定义 node_kind、input_artifact、allowed_tools、tool_fixtures、expected_constraints、gold_output_refs、budget；输入只包含该节点当时能看到的内容。
 - [ ] RunManifest 保存 commit、dirty diff hash、Python/依赖摘要、模型/采样参数、prompt hash、配置 hash、dataset hash、source snapshot hash、seed、judge 版本和运行模式。
-- [ ] 结果状态定义 passed/failed/error/skipped/not_applicable；metric score 可空，保留 reason、分母、样本数、trace_refs。失败不能进入“跳过后平均分更高”的路径。
-- [ ] 保存每例结果和最终聚合；输出到忽略的 `evals/results/<run_id>/`，不把生产报告和凭据写入 git。仓库仅保存小型自编 fixtures、标注 schema 和静态基准配置。
+- [x] 结果状态定义 passed/failed/error/skipped/not_applicable；metric score 可空，保留 reason、分母、样本数、trace_refs。失败不能进入“跳过后平均分更高”的路径。
+- [x] 保存每例结果和最终聚合；输出到忽略的 `evals/results/<run_id>/`，不把生产报告和凭据写入 git。仓库仅保存小型自编 fixtures、标注 schema 和静态基准配置。
+
+M0 补充：AgentCase 已实现可见输入投影、工具白名单和约束，工具 fixtures 通过 replay_key 关联独立文件；manifest 已记录离线 fixture 配置与源码/输入/数据指纹。真实模型采样参数、裁判配置及完整运行适配尚待接入，相关完整步骤保留未勾选。
 
 **验收**：新增 `tests/evals/test_eval_contracts.py`、`tests/evals/test_result_aggregation.py`；相同输入 manifest 可比，配置不同时明确差异，缺少裁判数据不得默认记为 1 分。
 
@@ -449,7 +453,7 @@ canonical_text 的规则固定为 UTF-8 解码后标准化换行、保留剩余�
 
 - [ ] 为每个任务预先编写 requirement 列表及权重、可接受答案/拒答条件、支持与反驳证据坐标；不要从候选模型答案反向生成唯一评分标准。
 - [ ] 每个需要语义判断的校准样例由两位标注者独立标注，记录争议与裁决。首轮可从小批开始，但必须报告实际双标数量与一致率。
-- [ ] validator 检查 ID 唯一、split 无来源泄漏、引用文件/hash/坐标有效、gold 不出现在被测 agent 可见字段。
+- [x] validator 检查 ID 唯一、split 无来源泄漏、引用文件/hash/坐标有效、gold 不出现在被测 agent 可见字段。
 - [ ] 保留集冻结版本，prompt 调优只看开发/校准集；发布评测使用保留集，之后新增版本而非回填修改成绩。
 
 **验收**：新增 `tests/evals/test_dataset_validation.py`；故意重复 ID、泄漏 gold、缺源文件和坐标越界都失败；每例可追溯到标注版本。
@@ -466,9 +470,9 @@ canonical_text 的规则固定为 UTF-8 解码后标准化换行、保留剩余�
 
 **执行步骤**：
 
-- [ ] ToolReplay 按 tool name、规范化参数、调用上下文和 fixture key 匹配；缺少 fixture 立即报错，禁止回退到真实网络。可重复查询定义可重放次数，不依赖不稳定的并发到达次序。
+- [x] ToolReplay 按 tool name、规范化参数、调用上下文和 fixture key 匹配；缺少 fixture 立即报错，禁止回退到真实网络。可重复查询定义可重放次数，不依赖不稳定的并发到达次序。
 - [ ] 旧行为轨迹适合回归回放；比较新规划策略时需要独立的可查询冻结语料工具环境，不能只提供旧策略访问过的请求，否则会偏袒旧策略。
-- [ ] offline 在 runner 内安装网络阻断，不能只设置 TDR_BLOCK_NETWORK 却依赖仅 pytest 才执行的 conftest；只对 UI 集成允许明确的 loopback 地址。
+- [x] offline 在 runner 内安装网络阻断，不能只设置 TDR_BLOCK_NETWORK 却依赖仅 pytest 才执行的 conftest；只对 UI 集成允许明确的 loopback 地址。
 - [ ] 模型和检索器以实例注入，禁止 benchmark 对全局类/环境变量打补丁；必要的旧适配器放独立进程，退出后状态不污染其他配置。
 - [ ] 预算包括 task、judge、retry 三部分；达到预算停止新调用，保存已完成样例和未执行原因。未知供应商费用记 unknown，并以调用/token 上限兜底。
 - [ ] run 与 score 分开：可只评分已有产物；在线模式必须显式 mode 和正数预算，默认 offline，不能因机器已有 API key 就自动联网。
@@ -811,6 +815,20 @@ def test_valid_negative_score_is_complete_but_not_a_pass():
 ### 8.1 推荐里程碑
 
 四项是交付主题，不是要求按 A→B→C→D 完全串行。D 的样本、网络隔离和基线从第一阶段建立，之后每项改动都能对照。
+
+当前任务清单（2026-10-26）：
+
+- [x] M0-01：运行上下文、研究结果、前后端请求/状态/事件契约及共享类型样本。
+- [x] M0-02：任务/节点评测契约、运行 manifest、错误状态和实际评分分母。
+- [x] M0-03：8 个任务、8 个节点的自编开发集及证据坐标/hash/引用校验。
+- [x] M0-04：实例隔离回放、runner 网络阻断、统一 CLI 与既有结果汇总。
+- [x] M0-05：SQLite/LangGraph 跨进程恢复小样、154 项离线测试、前端生产构建及实施记录。
+- [ ] M1：下一阶段。先执行批次 02 / A1，阅读 ReportStore 与存储调用点，细化迁移计划，再实施生产数据库及旧历史迁移；A2–A7 按依赖推进。
+- [ ] M2：统一入口与持久审核闭环。
+- [ ] M3：最小证据链与原文核查。
+- [ ] M4：全路径覆盖、真实任务/智能体评测、裁判校准与 CI。
+
+完成项仅对应 M0 范围；D2 完整标注集、D3 在线模式和 A/B/C/D 整体交付仍待实施。详细证据见 [M0 实施清单](m0-implementation-plan.zh-CN.md)。
 
 | 阶段 | 依赖 | 工作范围 | 阶段退出标准 |
 |---|---|---|---|

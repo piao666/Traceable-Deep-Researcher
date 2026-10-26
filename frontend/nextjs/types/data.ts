@@ -1,5 +1,8 @@
 export interface BaseData {
   type: string;
+  research_id?: string;
+  attempt_id?: string;
+  seq?: number;
 }
 
 export interface BasicData extends BaseData {
@@ -68,4 +71,4 @@ export interface ResearchHistoryItem {
   timestamp: number;
   orderedData: Data[];
   chatMessages?: ChatMessage[];
-} 
+}
