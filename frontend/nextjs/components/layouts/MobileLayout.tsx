@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ChatBoxSettings } from "@/types/data";
 import { useResearchHistoryContext } from "@/hooks/ResearchHistoryContext";
 import { formatDistanceToNow } from "date-fns";
+import { zhCN } from 'date-fns/locale';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -42,14 +43,14 @@ export default function MobileLayout({
   
   // Format timestamp for display
   const formatTimestamp = (timestamp: number | string | Date | undefined) => {
-    if (!timestamp) return 'Unknown time';
+    if (!timestamp) return "时间未知";
     
     try {
       const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return 'Unknown time';
-      return formatDistanceToNow(date, { addSuffix: true });
+      if (isNaN(date.getTime())) return "时间未知";
+      return formatDistanceToNow(date, { addSuffix: true, locale: zhCN });
     } catch {
-      return 'Unknown time';
+      return "时间未知";
     }
   };
   
@@ -89,7 +90,7 @@ export default function MobileLayout({
               <button
                 onClick={onStop}
                 className="p-2 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500/30"
-                aria-label="Stop research"
+                aria-label="停止研究"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
@@ -101,7 +102,7 @@ export default function MobileLayout({
               <button
                 onClick={onNewResearch}
                 className="p-2 rounded-full bg-sky-500/20 text-sky-300 hover:bg-sky-500/30"
-                aria-label="New research"
+                aria-label="新建研究"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -117,7 +118,7 @@ export default function MobileLayout({
                 if (toggleSidebar) toggleSidebar();
               }}
               className="p-2 rounded-full bg-gray-800/50 text-gray-300 hover:bg-gray-700/50"
-              aria-label="View history"
+              aria-label="查看研究记录"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -134,7 +135,7 @@ export default function MobileLayout({
                 setShowHistory(false);
               }}
               className="p-2 rounded-full bg-gray-800/50 text-gray-300 hover:bg-gray-700/50"
-              aria-label="Settings"
+              aria-label="设置"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -148,7 +149,7 @@ export default function MobileLayout({
         {showHistory && (
           <div className="px-4 py-3 bg-gray-800/90 border-t border-gray-700/50 animate-slide-down shadow-lg max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div className="mb-3 flex justify-between items-center">
-              <h3 className="text-sm font-medium text-gray-200">Research History</h3>
+              <h3 className="text-sm font-medium text-gray-200">研究记录</h3>
               <button 
                 onClick={() => setShowHistory(false)}
                 className="text-gray-400 hover:text-gray-300"
@@ -186,12 +187,12 @@ export default function MobileLayout({
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
                 </div>
-                <p className="text-sm text-gray-400">No research history yet</p>
+                <p className="text-sm text-gray-400">暂无研究记录</p>
                 <button 
                   onClick={onNewResearch} 
                   className="mt-3 px-4 py-2 text-xs text-teal-300 bg-teal-900/30 hover:bg-teal-800/40 rounded-md transition-colors"
                 >
-                  Start New Research
+                  新建研究
                 </button>
               </div>
             )}
@@ -202,7 +203,7 @@ export default function MobileLayout({
                   href="/history" 
                   className="text-xs text-teal-400 hover:text-teal-300 transition-colors"
                 >
-                  View All Research History
+                  查看全部研究记录
                 </a>
               </div>
             )}
@@ -213,7 +214,7 @@ export default function MobileLayout({
         {showSettings && (
           <div className="px-4 py-3 bg-gray-800/90 border-t border-gray-700/50 animate-slide-down shadow-lg">
             <div className="mb-2 flex justify-between items-center">
-              <h3 className="text-sm font-medium text-gray-200">Settings</h3>
+              <h3 className="text-sm font-medium text-gray-200">设置</h3>
               <button 
                 onClick={() => setShowSettings(false)}
                 className="text-gray-400 hover:text-gray-300"
@@ -227,57 +228,57 @@ export default function MobileLayout({
             
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Report Type</label>
+                <label className="block text-xs text-gray-400 mb-1">报告类型</label>
                 <select 
                   className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                   value={chatBoxSettings.report_type}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, report_type: e.target.value})}
                 >
-                  <option value="research_report">Summary - Short and fast (~2 min)</option>
-                  <option value="deep">Deep Research Report</option>
-                  <option value="multi_agents">Multi Agents Report</option>
-                  <option value="detailed_report">Detailed - In depth and longer (~5 min)</option>
+                  <option value="research_report">简要报告 · 精简快速</option>
+                  <option value="deep">深度研究报告</option>
+                  <option value="multi_agents">多智能体报告</option>
+                  <option value="detailed_report">详细报告 · 内容更深入</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Research Source</label>
+                <label className="block text-xs text-gray-400 mb-1">资料来源</label>
                 <select 
                   className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                   value={chatBoxSettings.report_source}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, report_source: e.target.value})}
                 >
-                  <option value="web">Web</option>
-                  <option value="scholar">Scholar</option>
+                  <option value="web">互联网</option>
+                  <option value="scholar">学术资料</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Research Tone</label>
+                <label className="block text-xs text-gray-400 mb-1">写作风格</label>
                 <select 
                   className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                   value={chatBoxSettings.tone}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, tone: e.target.value})}
                 >
-                  <option value="Objective">Objective - Impartial and unbiased presentation of facts</option>
-                  <option value="Formal">Formal - Adheres to academic standards</option>
-                  <option value="Analytical">Analytical - Critical evaluation of data</option>
-                  <option value="Persuasive">Persuasive - Convincing viewpoint</option>
-                  <option value="Informative">Informative - Clear, comprehensive information</option>
-                  <option value="Simple">Simple - Basic vocabulary and clear explanations</option>
-                  <option value="Casual">Casual - Conversational style</option>
+                  <option value="Objective">客观 · 中立呈现事实</option>
+                  <option value="Formal">正式 · 遵循学术规范</option>
+                  <option value="Analytical">分析 · 深入评估数据</option>
+                  <option value="Persuasive">论证 · 以论据阐明观点</option>
+                  <option value="Informative">资讯 · 清晰、全面地介绍信息</option>
+                  <option value="Simple">简明 · 用简单词汇清楚说明</option>
+                  <option value="Casual">轻松 · 自然口语化</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Layout</label>
+                <label className="block text-xs text-gray-400 mb-1">页面布局</label>
                 <select 
                   className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                   value={chatBoxSettings.layoutType}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, layoutType: e.target.value})}
                 >
-                  <option value="copilot">Copilot - Chat style layout</option>
-                  <option value="document">Document - Traditional report layout</option>
+                  <option value="copilot">协作模式 · 对话式布局</option>
+                  <option value="document">文档模式 · 传统报告布局</option>
                 </select>
               </div>
             </div>
@@ -296,11 +297,11 @@ export default function MobileLayout({
       {/* Footer */}
       <footer className="mt-auto py-3 px-4 text-center border-t border-gray-800/40 bg-gray-900/80 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-5 mb-3">
-          <a className="text-teal-300 hover:text-teal-200" href="https://github.com/piao666/Traceable-Deep-Researcher" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a className="text-teal-300 hover:text-teal-200" href="mailto:dahaipiao9@gmail.com">Contact Piao666</a>
+          <a className="text-teal-300 hover:text-teal-200" href="https://github.com/piao666/Traceable-Deep-Researcher" target="_blank" rel="noopener noreferrer">项目仓库</a>
+          <a className="text-teal-300 hover:text-teal-200" href="mailto:dahaipiao9@gmail.com">联系维护者</a>
         </div>
         <div className="text-xs text-gray-400">
-          Traceable Deep Researcher · Piao666
+          Traceable Deep Researcher · 自托管研究助手
         </div>
       </footer>
       

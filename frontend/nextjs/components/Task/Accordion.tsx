@@ -21,6 +21,13 @@ interface AccordionProps {
 
 const plainTextFields = ['task', 'sections', 'headers', 'sources', 'research_data'];
 
+const localizeField = (field: string): string => ({
+  task: '研究任务', sections: '章节', headers: '标题', sources: '资料来源',
+  research_data: '研究资料', report: '研究报告', introduction: '引言',
+  conclusion: '结论', title: '标题', outline: '提纲', feedback: '审核意见',
+  queries: '检索问题', subtopics: '子主题', draft: '报告草稿',
+}[field] || field);
+
 const Accordion: React.FC<AccordionProps> = ({ logs }) => {
   // State to store processed HTML content
   const [processedLogs, setProcessedLogs] = useState<Log[]>(logs);
@@ -57,15 +64,15 @@ const Accordion: React.FC<AccordionProps> = ({ logs }) => {
     }
 
     return log.header === 'differences'
-      ? 'The following fields on the Langgraph were updated: ' + Object.keys(JSON.parse(log.text).data).join(', ')
-      : `📄 Retrieved relevant content from the source: ${sourceUrl}`;
+      ? '研究状态已更新：' + Object.keys(JSON.parse(log.text).data).map(localizeField).join('、')
+      : `📄 已从来源提取相关内容：${sourceUrl}`;
   };
 
   const renderLogContent = (log: Log) => {
     if (log.header === 'differences' && log.processedData) {
       return log.processedData.map((data, index) => (
         <div key={index} className="mb-4">
-          <h3 className="font-semibold text-lg text-body-color dark:text-dark-6">{data.field}:</h3>
+          <h3 className="font-semibold text-lg text-body-color dark:text-dark-6">{localizeField(data.field)}：</h3>
           {data.isMarkdown ? (
             <div className="markdown-content" dangerouslySetInnerHTML={{ __html: data.htmlContent as string }} />
           ) : (

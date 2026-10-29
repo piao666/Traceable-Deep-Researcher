@@ -11,7 +11,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       <div className="flex items-center gap-2 sm:gap-4">
         <img
           src={"/img/message-question-circle.svg"}
-          alt="message"
+          alt="问题"
           width={24}
           height={24}
           className="w-6 h-6"

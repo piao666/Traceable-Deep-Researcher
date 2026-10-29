@@ -74,7 +74,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to get chat response');
+        throw new Error("暂时无法获取回答");
       }
       
       const data = await response.json();
@@ -88,7 +88,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Show error message in chat
       onAddMessage({
         role: 'assistant',
-        content: 'Sorry, there was an error processing your request. Please try again.',
+        content: "请求处理失败，请稍后重试。",
         timestamp: Date.now()
       });
     } finally {
@@ -114,10 +114,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             </div>
             
-            <h3 className="text-lg font-medium text-white mb-2">Ask a question about this research report</h3>
+            <h3 className="text-lg font-medium text-white mb-2">针对这份报告提问</h3>
             <p className="text-sm text-gray-400 max-w-md mx-auto">
-              The AI has analyzed all the content and is ready to help you explore the findings. 
-              Ask anything about the research, request summaries, or dig deeper into specific topics.
+              我已整理报告内容。你可以继续提问、获取摘要，或深入了解某个主题。
             </p>
           </div>
         ) : (

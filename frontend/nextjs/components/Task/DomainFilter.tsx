@@ -20,13 +20,13 @@ export default function DomainFilter({
     <div className="mt-4 domain_filters">
       <div className="flex gap-2 mb-4">
         <label htmlFor="domain_filters" className="agent_question">
-          Filter by domain{" "}
+          限定来源网站{" "}
         </label>
         <input
           type="text"
           value={newDomain}
           onChange={(e) => setNewDomain(e.target.value)}
-          placeholder="Filter by domain (e.g., techcrunch.com)"
+          placeholder="输入网站域名，例如 example.com"
           className="input-static"
           onKeyPress={(e) => {
             if (e.key === "Enter") {
@@ -40,7 +40,7 @@ export default function DomainFilter({
           onClick={onAddDomain}
           className="button-static"
         >
-          Add Domain
+          添加网站
         </button>
       </div>
 

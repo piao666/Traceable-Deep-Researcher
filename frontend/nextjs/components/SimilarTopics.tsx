@@ -14,7 +14,7 @@ const SimilarTopics = ({
       <div className="hidden lg:block">
         <img
           src="/img/similarTopics.svg"
-          alt="footer"
+          alt="相关主题"
           width={24}
           height={24}
         />
@@ -23,13 +23,13 @@ const SimilarTopics = ({
         <div className="flex gap-4 pb-3">
           <img
             src="/img/similarTopics.svg"
-            alt="footer"
+            alt="相关主题"
             width={24}
             height={24}
             className="block lg:hidden"
           />
           <h3 className="text-base font-bold uppercase text-black">
-            Similar topics:{" "}
+            相关主题：{" "}
           </h3>
         </div>
 
@@ -47,7 +47,7 @@ const SimilarTopics = ({
                 <div className="flex items-center">
                   <img
                     src="/img/arrow-circle-up-right.svg"
-                    alt="footer"
+                    alt="开始研究相关主题"
                     width={24}
                     height={24}
                   />

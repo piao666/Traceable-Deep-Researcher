@@ -126,7 +126,7 @@ export const TraceableDeepResearcher = ({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to get chat response');
+        throw new Error("暂时无法获取回答");
       }
       
       const data = await response.json();
@@ -144,7 +144,7 @@ export const TraceableDeepResearcher = ({
       // Add error message to display
       setOrderedData(prevOrder => [...prevOrder, { 
         type: 'chat', 
-        content: 'Sorry, there was an error processing your request. Please try again.' 
+        content: "请求处理失败，请稍后重试。"
       }]);
     } finally {
       setLoading(false);

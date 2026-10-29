@@ -46,17 +46,17 @@ export default function ChatResponse({ answer, metadata }: ChatResponseProps) {
     }, [answer]);
     
     // Format the answer for display
-    const formattedAnswer = answer.trim() || 'No answer available.';
+    const formattedAnswer = answer.trim() || "暂无回答。";
     
     const copyToClipboard = () => {
         // Copy the plain text of the answer instead of the HTML
         navigator.clipboard.writeText(formattedAnswer)
             .then(() => {
-                toast.success('Copied to clipboard!');
+                toast.success("已复制到剪贴板");
             })
             .catch((err) => {
                 console.error('Failed to copy: ', err);
-                toast.error('Failed to copy to clipboard');
+                toast.error("复制失败，请重试");
             });
     };
   
@@ -70,17 +70,17 @@ export default function ChatResponse({ answer, metadata }: ChatResponseProps) {
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
               </div>
-              <h3 className="text-sm font-medium text-teal-200">Answer</h3>
+              <h3 className="text-sm font-medium text-teal-200">回答</h3>
             </div>
             <button 
               onClick={copyToClipboard}
               className="hover:opacity-80 transition-opacity duration-200"
-              aria-label="Copy to clipboard"
-              title="Copy to clipboard"
+              aria-label="复制内容"
+              title="复制内容"
             >
               <img
                 src="/img/copy-white.svg"
-                alt="copy"
+                alt="复制"
                 width={20}
                 height={20}
                 className="cursor-pointer text-white"
@@ -108,7 +108,7 @@ export default function ChatResponse({ answer, metadata }: ChatResponseProps) {
                     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                   </svg>
                 </div>
-                <span className="text-xs font-medium text-blue-300">New Sources</span>
+                <span className="text-xs font-medium text-blue-300">补充来源</span>
               </div>
               <Sources sources={webSources} compact={true} />
             </div>

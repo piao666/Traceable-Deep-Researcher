@@ -1,7 +1,8 @@
 {
   "name": "Traceable Deep Researcher",
   "short_name": "TDR",
-  "description": "AI research assistant that helps you find information and answer questions.",
+  "description": "支持资料检索、深入研究和来源引用的研究助手。",
+  "lang": "zh-CN",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
@@ -23,9 +24,9 @@
   ],
   "shortcuts": [
     {
-      "name": "New Research",
-      "short_name": "New",
-      "description": "Start a new research query",
+      "name": "新建研究",
+      "short_name": "新建研究",
+      "description": "开始一次新的研究",
       "url": "/?source=pwa",
       "icons": [
         {

@@ -163,7 +163,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
           // Only show error toast if we haven't shown a toast yet in this component instance
           if (!toastShownRef.current) {
             console.log('Showing backend error toast');
-            toast.error("Server connection error. Using local data if available.", {
+            toast.error("服务器连接异常，将尝试使用本地记录。", {
               id: `server-error-${id}`, // Unique ID per research
             });
             toastShownRef.current = true;
@@ -191,7 +191,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
         // Only show error toast if we haven't shown a toast yet in this component instance
         if (!toastShownRef.current) {
           console.log('Showing fetch error toast');
-          toast.error("Failed to connect to server. Using local data if available.", {
+          toast.error("无法连接服务器，将尝试使用本地记录。", {
             id: `fetch-error-${id}`, // Unique ID per research
           });
           toastShownRef.current = true;
@@ -397,7 +397,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
         // Show error message
         const errorChatData: ChatData = { 
           type: 'chat', 
-          content: 'Sorry, something went wrong. Please try again.' 
+          content: "处理失败，请稍后重试。"
         };
         setOrderedData(prevOrder => [...prevOrder, errorChatData]);
       }
@@ -407,7 +407,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
       // Add error message
       const errorChatData: ChatData = { 
         type: 'chat', 
-        content: 'Sorry, there was an error processing your request. Please try again.' 
+        content: "请求处理失败，请稍后重试。"
       };
       setOrderedData(prevOrder => [...prevOrder, errorChatData]);
     } finally {
@@ -423,12 +423,12 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
     const url = window.location.href;
     navigator.clipboard.writeText(url)
       .then(() => {
-        toast.success("URL copied to clipboard!", {
+        toast.success("链接已复制到剪贴板", {
           id: `copy-success-${id}`, // Unique ID per research
         });
       })
       .catch(() => {
-        toast.error("Failed to copy URL", {
+        toast.error("链接复制失败，请重试", {
           id: `copy-error-${id}`, // Unique ID per research
         });
       });

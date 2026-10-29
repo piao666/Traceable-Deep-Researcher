@@ -108,7 +108,7 @@ export default function ResearchForm({
     >
       <div className="form-group">
         <label htmlFor="report_type" className="agent_question">
-          Report Type{" "}
+          报告类型{" "}
         </label>
         <select
           name="report_type"
@@ -118,19 +118,19 @@ export default function ResearchForm({
           required
         >
           <option value="research_report">
-            Summary - Short and fast (~2 min)
+            简要报告 · 精简快速
           </option>
-          <option value="deep">Deep Research Report</option>
-          <option value="multi_agents">Multi Agents Report</option>
+          <option value="deep">深度研究报告</option>
+          <option value="multi_agents">多智能体报告</option>
           <option value="detailed_report">
-            Detailed - In depth and longer (~5 min)
+            详细报告 · 内容更深入
           </option>
         </select>
       </div>
 
       <div className="form-group">
         <label htmlFor="report_source" className="agent_question">
-          Report Source{" "}
+          资料来源{" "}
         </label>
         <select
           name="report_source"
@@ -139,9 +139,9 @@ export default function ResearchForm({
           className="form-control-static"
           required
         >
-          <option value="web">The Internet</option>
-          <option value="local">My Documents</option>
-          <option value="hybrid">Hybrid</option>
+          <option value="web">互联网</option>
+          <option value="local">我的文档</option>
+          <option value="hybrid">网络与文档混合</option>
         </select>
       </div>
 

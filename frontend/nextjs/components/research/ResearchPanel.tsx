@@ -57,7 +57,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              New Research
+              新建研究
             </button>
           )}
           
@@ -72,7 +72,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
                 <polyline points="16 6 12 2 8 6"></polyline>
                 <line x1="12" y1="2" x2="12" y2="15"></line>
               </svg>
-              Share
+              分享
             </button>
           )}
           
@@ -85,7 +85,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
-              Chat
+              对话
             </button>
           )}
         </div>

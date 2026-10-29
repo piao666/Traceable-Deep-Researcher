@@ -30,7 +30,7 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
     isValid: boolean;
     message: string;
     serverCount?: number;
-  }>({ isValid: true, message: 'Valid JSON ✓' });
+  }>({ isValid: true, message: "配置格式正确 ✓" });
   const [showInfoModal, setShowInfoModal] = useState(false);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
 
   const validateConfig = (text: string) => {
     if (!text.trim() || text.trim() === '[]') {
-      setValidationStatus({ isValid: true, message: 'Empty configuration' });
+      setValidationStatus({ isValid: true, message: "尚未配置工具服务器" });
       return true;
     }
 
@@ -59,16 +59,20 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
       const parsed = JSON.parse(text);
 
       if (!Array.isArray(parsed)) {
-        throw new Error('Configuration must be an array');
+        throw new Error("配置必须为数组");
       }
 
       const errors: string[] = [];
       parsed.forEach((server: any, index: number) => {
+        if (!server || typeof server !== 'object' || Array.isArray(server)) {
+          errors.push(`第 ${index + 1} 个服务器必须为配置对象`);
+          return;
+        }
         if (!server.name) {
-          errors.push(`Server ${index + 1}: missing name`);
+          errors.push(`第 ${index + 1} 个服务器缺少名称（name）`);
         }
         if (!server.command && !server.connection_url) {
-          errors.push(`Server ${index + 1}: missing command or connection_url`);
+          errors.push(`第 ${index + 1} 个服务器缺少启动命令（command）或连接地址（connection_url）`);
         }
       });
 
@@ -78,14 +82,16 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
 
       setValidationStatus({
         isValid: true,
-        message: `Valid JSON ✓ (${parsed.length} server${parsed.length !== 1 ? 's' : ''})`,
+        message: `配置格式正确 ✓（共 ${parsed.length} 个服务器）`,
         serverCount: parsed.length
       });
       return true;
     } catch (error: any) {
       setValidationStatus({
         isValid: false,
-        message: `Invalid JSON: ${error.message}`
+        message: error instanceof SyntaxError
+          ? '配置语法有误，请检查括号、引号和逗号。'
+          : `配置无效：${error.message}`
       });
       return false;
     }
@@ -261,59 +267,60 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
               checked={enabled}
               onChange={handleEnabledChange}
             />
-            Enable MCP (Model Context Protocol)
+            启用外部工具连接
           </label>
           <button
             type="button"
             className="settings mcp-info-btn"
             onClick={() => setShowInfoModal(true)}
-            title="Learn about MCP"
+            title="了解工具连接协议"
           >
             ℹ️
           </button>
         </div>
         <small className="text-muted" style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem', marginBottom: '15px', display: 'block' }}>
-          Connect to external tools and data sources through MCP servers
+          通过工具服务器连接外部工具和数据来源
         </small>
 
         {enabled && (
           <div className="settings mcp-config-section">
             <div className="settings mcp-presets">
-              <label className="agent_question" style={{ marginBottom: '10px' }}>Quick Presets</label>
+              <label className="agent_question" style={{ marginBottom: '10px' }}>快捷预设</label>
               <div className="settings preset-buttons">
                 <button
                   type="button"
                   className={`settings preset-btn ${isPresetSelected('github') ? 'selected' : ''}`}
                   onClick={() => togglePreset('github')}
                 >
-                  <i className="fab fa-github"></i> GitHub
+                  <i className="fab fa-github"></i> 项目仓库
                 </button>
                 <button
                   type="button"
                   className={`settings preset-btn ${isPresetSelected('tavily') ? 'selected' : ''}`}
                   onClick={() => togglePreset('tavily')}
                 >
-                  <i className="fas fa-search"></i> Tavily Web Search
+                  <i className="fas fa-search"></i> 网络搜索服务
                 </button>
                 <button
                   type="button"
                   className={`settings preset-btn ${isPresetSelected('filesystem') ? 'selected' : ''}`}
                   onClick={() => togglePreset('filesystem')}
                 >
-                  <i className="fas fa-folder"></i> Local Files
+                  <i className="fas fa-folder"></i> 本地文件
                 </button>
               </div>
               <small className="text-muted" style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem', marginTop: '8px', display: 'block' }}>
-                Click a preset to toggle MCP servers in the configuration below. Selected presets are highlighted.
+                点击预设可添加或移除下方的工具服务器，已选预设会高亮显示。
               </small>
             </div>
 
             <div className="settings mcp-config-group">
-              <label className="agent_question" style={{ marginBottom: '10px' }}>MCP Servers Configuration</label>
+              <label className="agent_question" style={{ marginBottom: '10px' }}>工具服务器配置</label>
               <textarea
+                aria-label="工具服务器配置"
                 className={`settings mcp-config-textarea ${validationStatus.isValid ? 'valid' : 'invalid'}`}
                 rows={12}
-                placeholder="Paste your MCP servers configuration as JSON array..."
+                placeholder="在此粘贴工具服务器的配置数组……"
                 value={configText}
                 onChange={handleConfigChange}
                 style={{ minHeight: '300px' }}
@@ -327,22 +334,22 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
                   className="settings mcp-format-btn"
                   onClick={formatJSON}
                 >
-                  <i className="fas fa-code"></i> Format JSON
+                  <i className="fas fa-code"></i> 格式化配置
                 </button>
               </div>
               <small className="text-muted" style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem', marginTop: '8px', display: 'block', lineHeight: '1.4' }}>
-                Paste your MCP servers configuration as a JSON array. Each server should have properties like{' '}
+                请以数组形式粘贴配置。每个服务器应包含以下字段：{' '}
                 <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>name</code>,{' '}
                 <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>command</code>,{' '}
-                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>args</code>, and optional{' '}
-                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>env</code> variables.{' '}
+                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>args</code>，以及可选的{' '}
+                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>env</code> 环境变量。{' '}
                 <a
                   href="#"
                   className="settings mcp-example-link"
                   onClick={(e) => { e.preventDefault(); showExample(); }}
                   style={{ color: '#0d9488', textDecoration: 'none', fontWeight: '500' }}
                 >
-                  See example →
+                  查看示例 →
                 </a>
               </small>
             </div>
@@ -355,36 +362,38 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
             <div className="settings mcp-info-content">
               <button
                 className="settings mcp-info-close"
+                type="button"
+                aria-label="关闭工具说明"
                 onClick={() => setShowInfoModal(false)}
               >
                 <i className="fas fa-times"></i>
               </button>
-              <h3>Model Context Protocol (MCP)</h3>
-              <p>MCP enables Traceable Deep Researcher to connect with external tools and data sources through a standardized protocol.</p>
+              <h3>模型上下文协议</h3>
+              <p>模型上下文协议让 Traceable Deep Researcher 通过统一协议连接外部工具和数据来源。</p>
 
-              <h4 className="highlight">Benefits:</h4>
+              <h4 className="highlight">主要用途：</h4>
               <ul>
-                <li><span className="highlight">Access Local Data:</span> Connect to databases, file systems, and APIs</li>
-                <li><span className="highlight">Use External Tools:</span> Integrate with web services and third-party tools</li>
-                <li><span className="highlight">Extend Capabilities:</span> Add custom functionality through MCP servers</li>
-                <li><span className="highlight">Maintain Security:</span> Controlled access with proper authentication</li>
+                <li><span className="highlight">访问本地数据：</span> 连接数据库、文件系统和外部接口</li>
+                <li><span className="highlight">使用外部工具：</span> 接入网络服务与第三方工具</li>
+                <li><span className="highlight">扩展能力：</span> 通过工具服务器增加自定义功能</li>
+                <li><span className="highlight">控制访问：</span> 通过身份验证限制数据和工具的访问权限</li>
               </ul>
 
-              <h4 className="highlight">Quick Start:</h4>
+              <h4 className="highlight">使用步骤：</h4>
               <ul>
-                <li>Enable MCP using the checkbox above</li>
-                <li>Click a preset to add pre-configured servers to the JSON</li>
-                <li>Or paste your own MCP configuration as a JSON array</li>
-                <li>Start your research - MCP will run with optimal settings</li>
+                <li>勾选上方选项，启用外部工具连接</li>
+                <li>点击快捷预设，将服务器添加到配置中</li>
+                <li>也可以直接粘贴自己的工具服务器配置数组</li>
+                <li>保存配置后开始研究，系统会使用已连接的工具</li>
               </ul>
 
-              <h4 className="highlight">Configuration Format:</h4>
-              <p>Each MCP server should be a JSON object with these properties:</p>
+              <h4 className="highlight">配置格式：</h4>
+              <p>每个工具服务器应为包含以下字段的对象：</p>
               <ul>
-                <li><span className="highlight">name:</span> Unique identifier (e.g., &quot;github&quot;, &quot;filesystem&quot;)</li>
-                <li><span className="highlight">command:</span> Command to run the server (e.g., &quot;npx&quot;, &quot;python&quot;)</li>
-                <li><span className="highlight">args:</span> Array of arguments (e.g., [&quot;-y&quot;, &quot;@modelcontextprotocol/server-github&quot;])</li>
-                <li><span className="highlight">env:</span> Object with environment variables (e.g., {JSON.stringify({API_KEY: "your_key"})})</li>
+                <li><span className="highlight">名称（name）：</span> 唯一标识，例如代码仓库或文件系统服务的标识</li>
+                <li><span className="highlight">启动命令（command）：</span> 用于启动服务器的命令</li>
+                <li><span className="highlight">启动参数（args）：</span> 启动命令所需的参数数组</li>
+                <li><span className="highlight">环境变量（env）：</span> 环境变量对象，例如 {JSON.stringify({API_KEY: "在此填写密钥"})}</li>
               </ul>
             </div>
           </div>

@@ -36,7 +36,7 @@ const InputArea: FC<TInputAreaProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const placeholder = "Enter your topic, question, or area of interest...";
+  const placeholder = "输入你想研究的主题、问题或感兴趣的领域……";
 
   // Auto-focus the textarea when component mounts
   useEffect(() => {
@@ -143,7 +143,7 @@ const InputArea: FC<TInputAreaProps> = ({
             
             <img
               src={"/img/arrow-narrow-right.svg"}
-              alt="search"
+              alt="开始研究"
               width={20}
               height={20}
               className={`${disabled ? "invisible" : ""} transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(255,255,255,0.7)]`}

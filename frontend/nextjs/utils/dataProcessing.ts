@@ -82,7 +82,7 @@ export const preprocessOrderedData = (data: Data[]) => {
               hostname = new URL(metadata).hostname.replace('www.', '');
             }
           } catch (e) {
-            hostname = "unknown";
+            hostname = "未知来源";
           }
           currentSourceGroup.items.push({ name: hostname, url: metadata });
         }
@@ -126,4 +126,4 @@ export const preprocessOrderedData = (data: Data[]) => {
 
   groupedData = consolidateSourceAndImageBlocks(groupedData);
   return groupedData;
-}; 
+};

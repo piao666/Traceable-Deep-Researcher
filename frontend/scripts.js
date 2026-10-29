@@ -88,7 +88,7 @@ const TraceableDeepResearcher = (() => {
       if (!cookieEnabled) {
         console.warn("Cookies are disabled in this browser");
         cookiesEnabled = false;
-        showToast("Cookies are disabled. History will use localStorage instead.", 5000);
+        showToast("浏览器已禁用网站存储凭据，研究记录将保存在本机。", 5000);
       } else {
         // Clean up test cookie
         document.cookie = "testcookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -171,21 +171,21 @@ const TraceableDeepResearcher = (() => {
       // Add export history button with enhanced styling and tooltip
       const exportBtn = document.createElement('button');
       exportBtn.className = 'history-action-btn';
-      exportBtn.title = 'Export research history to file';
+      exportBtn.title = "导出研究记录";
       exportBtn.innerHTML = '<i class="fas fa-file-export"></i>';
       exportBtn.addEventListener('click', exportHistory);
 
       // Add import history button with enhanced styling and tooltip
       const importBtn = document.createElement('button');
       importBtn.className = 'history-action-btn';
-      importBtn.title = 'Import research history from file';
+      importBtn.title = "导入研究记录";
       importBtn.innerHTML = '<i class="fas fa-file-import"></i>';
       importBtn.addEventListener('click', triggerImportHistory);
 
       // Add cookie debug button with enhanced styling and tooltip
       const debugBtn = document.createElement('button');
       debugBtn.className = 'history-action-btn';
-      debugBtn.title = 'Check storage status';
+      debugBtn.title = "检查存储状态";
       debugBtn.innerHTML = '<i class="fas fa-database"></i>';
       debugBtn.addEventListener('click', checkCookieStatus);
 
@@ -297,7 +297,7 @@ const TraceableDeepResearcher = (() => {
 
     // Update research status
     if (researchStatusEl) {
-      researchStatusEl.textContent = isResearchActive ? 'Active' : 'Inactive';
+      researchStatusEl.textContent = isResearchActive ? "进行中" : "未开始";
     }
 
     // Update connection duration
@@ -311,7 +311,7 @@ const TraceableDeepResearcher = (() => {
     // Update last activity
     if (lastActivityEl && lastActivityTime) {
       const elapsed = Math.floor((Date.now() - lastActivityTime) / 1000);
-      lastActivityEl.textContent = elapsed < 60 ? `${elapsed} sec ago` : formatDuration(elapsed) + ' ago';
+      lastActivityEl.textContent = elapsed < 60 ? `${elapsed} 秒前` : formatDuration(elapsed) + '前';
     } else if (lastActivityEl) {
       lastActivityEl.textContent = '-';
     }
@@ -346,7 +346,7 @@ const TraceableDeepResearcher = (() => {
   const getSocketStatus = () => {
     if (!socket) {
       return {
-        statusText: 'Disconnected',
+        statusText: "未连接",
         indicatorClass: 'disconnected'
       };
     }
@@ -354,23 +354,23 @@ const TraceableDeepResearcher = (() => {
     switch (socket.readyState) {
       case WebSocket.CONNECTING:
         return {
-          statusText: 'Connecting',
+          statusText: "正在连接",
           indicatorClass: 'connecting'
         };
       case WebSocket.OPEN:
         return {
-          statusText: 'Connected',
+          statusText: "已连接",
           indicatorClass: 'connected'
         };
       case WebSocket.CLOSING:
         return {
-          statusText: 'Closing',
+          statusText: "正在断开",
           indicatorClass: 'connecting'
         };
       case WebSocket.CLOSED:
       default:
         return {
-          statusText: 'Disconnected',
+          statusText: "未连接",
           indicatorClass: 'disconnected'
         };
     }
@@ -380,28 +380,28 @@ const TraceableDeepResearcher = (() => {
   const getReadyStateText = (readyState) => {
     switch (readyState) {
       case WebSocket.CONNECTING:
-        return '0 (Connecting)';
+        return "0（正在连接）";
       case WebSocket.OPEN:
-        return '1 (Open)';
+        return "1（已连接）";
       case WebSocket.CLOSING:
-        return '2 (Closing)';
+        return "2（正在断开）";
       case WebSocket.CLOSED:
-        return '3 (Closed)';
+        return "3（已断开）";
       default:
-        return `${readyState} (Unknown)`;
+        return `${readyState}（未知）`;
     }
   }
 
   // Format duration in seconds to human-readable string
   const formatDuration = (seconds) => {
     if (seconds < 60) {
-      return `${seconds} sec`;
+      return `${seconds} 秒`;
     } else if (seconds < 3600) {
-      return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
+      return `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
     } else {
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
-      return `${hours} hr ${minutes} min`;
+      return `${hours} 小时 ${minutes} 分`;
     }
   }
 
@@ -470,31 +470,31 @@ const TraceableDeepResearcher = (() => {
       setCookie('conversationHistory', jsonString, 30);
 
       if (storageHistory.length > 0 && !isInitialLoad) {
-        showToast('Research history saved!');
+        showToast("研究记录已保存");
       }
     } catch (error) {
       console.error('Error saving research history:', error);
-      showToast('Error saving history. Some entries may not be saved.');
+      showToast("记录保存失败，部分记录可能未保存。");
     }
   }
 
   // Delete a history entry
   const deleteHistoryEntry = (index) => {
-    if (confirm('Are you sure you want to delete this research entry?')) {
+    if (confirm("确定删除这条研究记录吗？")) {
       conversationHistory.splice(index, 1);
       saveConversationHistory();
       renderHistoryEntries();
-      showToast('Entry deleted successfully');
+      showToast("研究记录已删除");
     }
   }
 
   // Clear all conversation history
   const clearConversationHistory = () => {
-    if (confirm('Are you sure you want to clear all research history? This cannot be undone.')) {
+    if (confirm("确定清空全部研究记录吗？此操作无法撤销。")) {
       conversationHistory = [];
       saveConversationHistory();
       renderHistoryEntries();
-      showToast('Research history cleared successfully');
+      showToast("研究记录已清空");
     }
   }
 
@@ -540,7 +540,7 @@ const TraceableDeepResearcher = (() => {
     historyEntries.innerHTML = '';
 
     if (!conversationHistory || conversationHistory.length === 0) {
-      historyEntries.innerHTML = '<p class="text-center mt-4 text-muted">No research history yet.</p>';
+      historyEntries.innerHTML = "<p class=\"text-center mt-4 text-muted\">暂无研究记录</p>";
       return;
     }
 
@@ -564,8 +564,8 @@ const TraceableDeepResearcher = (() => {
       if (entry.timestamp) {
         try {
           const timestamp = new Date(entry.timestamp);
-          const formattedDate = timestamp.toLocaleDateString();
-          const formattedTime = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const formattedDate = timestamp.toLocaleDateString("zh-CN");
+          const formattedTime = timestamp.toLocaleTimeString("zh-CN", { hour: '2-digit', minute: '2-digit' });
           timestampHTML = `<span class="history-entry-timestamp">${formattedDate} ${formattedTime}</span>`;
         } catch (e) {
           console.error('Error formatting timestamp:', e);
@@ -578,17 +578,17 @@ const TraceableDeepResearcher = (() => {
       // Build the HTML for the entry with enhanced formatting
       entryElement.innerHTML = `
         <div class="history-entry-header">
-          <h4 class="history-entry-title">${entry.prompt || 'Unnamed Research'}</h4>
+          <h4 class="history-entry-title">${entry.prompt || "未命名研究"}</h4>
           ${timestampHTML}
         </div>
         <div class="history-entry-format">
-          ${links.pdf ? `<a href="${links.pdf}" class="history-entry-action" target="_blank" title="Open PDF Report"><i class="fas fa-file-pdf"></i> PDF</a>` : ''}
-          ${links.docx ? `<a href="${links.docx}" class="history-entry-action" target="_blank" title="Open Word Document"><i class="fas fa-file-word"></i> Word</a>` : ''}
-          ${links.md ? `<a href="${links.md}" class="history-entry-action" target="_blank" title="Open Markdown File"><i class="fas fa-file-lines"></i> MD</a>` : ''}
-          ${links.json ? `<a href="${links.json}" class="history-entry-action" target="_blank" title="Open JSON Data"><i class="fas fa-file-code"></i> JSON</a>` : ''}
+          ${links.pdf ? `<a href="${links.pdf}" class="history-entry-action" target="_blank" title="打开便携文档"><i class="fas fa-file-pdf"></i> 便携文档</a>` : ''}
+          ${links.docx ? `<a href="${links.docx}" class="history-entry-action" target="_blank" title="打开可编辑文档"><i class="fas fa-file-word"></i> 可编辑文档</a>` : ''}
+          ${links.md ? `<a href="${links.md}" class="history-entry-action" target="_blank" title="打开纯文本报告"><i class="fas fa-file-lines"></i> 纯文本</a>` : ''}
+          ${links.json ? `<a href="${links.json}" class="history-entry-action" target="_blank" title="打开研究数据"><i class="fas fa-file-code"></i> 研究数据</a>` : ''}
         </div>
         <div class="history-entry-actions">
-          <button class="history-entry-action delete-entry" title="Delete this research entry"><i class="fas fa-trash-alt"></i></button>
+          <button class="history-entry-action delete-entry" title="删除这条研究记录"><i class="fas fa-trash-alt"></i></button>
         </div>
       `;
 
@@ -679,7 +679,7 @@ const TraceableDeepResearcher = (() => {
     }
 
     // Inform user
-    showToast('Research parameters loaded. You can start the research again.');
+    showToast("研究参数已载入，可以重新开始研究。");
   }
 
   // Copy entry content to clipboard
@@ -695,7 +695,7 @@ const TraceableDeepResearcher = (() => {
     document.body.removeChild(textarea);
 
     // Show a toast notification
-    showToast('Research content copied to clipboard!');
+    showToast("研究内容已复制到剪贴板");
   }
 
   // Show a toast notification
@@ -723,7 +723,7 @@ const TraceableDeepResearcher = (() => {
   const saveToHistory = (report, downloadLinks) => {
     if (!downloadLinks) {
       console.error('No download links provided');
-      showToast('Error: Could not save research to history');
+      showToast("无法保存研究记录");
       return;
     }
 
@@ -758,9 +758,9 @@ const TraceableDeepResearcher = (() => {
 
     // Prompt user about storage method
     if (cookiesEnabled) {
-      showToast('Research saved! Your history is stored in a browser cookie.');
+      showToast("研究已保存，记录已存储在当前浏览器。");
     } else {
-      showToast('Research saved! Your history is stored using localStorage.');
+      showToast("研究已保存，记录已存储在本机。");
     }
   }
 
@@ -805,7 +805,7 @@ const TraceableDeepResearcher = (() => {
     updateState('in_progress')
 
     addAgentResponse({
-      output: '🧙‍♂️ Gathering information and analyzing your research topic...',
+      output: '🧙‍♂️ 正在收集资料并分析研究主题……',
     })
 
     // Scroll to the "Research Progress" section
@@ -1074,7 +1074,7 @@ const TraceableDeepResearcher = (() => {
 
     const heading = document.createElement('p');
     heading.className = 'sub-questions-heading';
-    heading.textContent = '🤔 Pondering your question from several angles';
+    heading.textContent = "🤔 正在从多个角度分析你的问题";
     container.appendChild(heading);
 
     const list = document.createElement('div');
@@ -1176,7 +1176,7 @@ const TraceableDeepResearcher = (() => {
     // Function to reset the icon for both buttons
     const resetIcons = () => {
       if (copyBtn) {
-        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i> 复制';
       }
       if (copyBtnTop) {
         copyBtnTop.innerHTML = '<i class="fas fa-copy"></i>';
@@ -1185,14 +1185,14 @@ const TraceableDeepResearcher = (() => {
 
     // Change to green check mark
     if (copyBtn) {
-      copyBtn.innerHTML = '<i class="fas fa-check" style="color: green;"></i> Copied!';
+      copyBtn.innerHTML = '<i class="fas fa-check" style="color: green;"></i> 已复制';
     }
     if (copyBtnTop) {
       copyBtnTop.innerHTML = '<i class="fas fa-check" style="color: green;"></i>';
     }
 
     // Show toast notification
-    showToast('Copied to clipboard!');
+    showToast("已复制到剪贴板");
 
     // Reset the button after 3 seconds
     setTimeout(resetIcons, 3000);
@@ -1202,7 +1202,7 @@ const TraceableDeepResearcher = (() => {
     var status = ''
     switch (state) {
       case 'in_progress':
-        status = 'Research in progress...'
+        status = '研究进行中……'
         setReportActionsStatus('disabled')
         isResearchActive = true;
         // Make the research icon spin
@@ -1224,7 +1224,7 @@ const TraceableDeepResearcher = (() => {
         }
         break
       case 'finished':
-        status = 'Research finished!'
+        status = '研究已完成'
         setReportActionsStatus('enabled')
         isResearchActive = false;
         // Stop the research icon spinning
@@ -1261,7 +1261,7 @@ const TraceableDeepResearcher = (() => {
         }
         break
       case 'error':
-        status = 'Research failed!'
+        status = '研究失败，请重试'
         setReportActionsStatus('disabled')
         isResearchActive = false;
         // Stop the research icon spinning
@@ -1354,7 +1354,7 @@ const TraceableDeepResearcher = (() => {
       images.forEach(imageUrl => {
         const imgElement = document.createElement('img')
         imgElement.src = imageUrl
-        imgElement.alt = 'Research Image'
+        imgElement.alt = '研究图片'
         imgElement.style.maxWidth = '200px'
         imgElement.style.margin = '5px'
         imgElement.style.cursor = 'pointer'
@@ -1363,7 +1363,7 @@ const TraceableDeepResearcher = (() => {
       })
       imageContainer.style.display = 'block'
     } else {
-      imageContainer.innerHTML += '<p>No images found for this research.</p>'
+      imageContainer.innerHTML += "<p>本次研究暂无相关图片。</p>"
     }
   }
 
@@ -1374,10 +1374,10 @@ const TraceableDeepResearcher = (() => {
         dialog.className = 'image-dialog';
 
         const img = document.createElement('img');
-        img.alt = 'Full-size Research Image';
+        img.alt = '研究图片原图';
 
         const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Close';
+        closeBtn.textContent = "关闭";
         closeBtn.className = 'close-btn'; // Added class for styling
 
         dialog.appendChild(img);
@@ -1464,7 +1464,7 @@ const TraceableDeepResearcher = (() => {
     // If cookie is too large, display warning and truncate history
     if (cookieSize > MAX_COOKIE_SIZE) {
       console.warn(`Cookie size (${cookieSize} bytes) exceeds the ${MAX_COOKIE_SIZE} bytes limit!`);
-      showToast('Warning: History too large for cookie storage! Oldest entries will be removed.');
+      showToast("研究记录超出浏览器存储容量，将移除最早的记录。");
 
       if (name === 'conversationHistory') {
         try {
@@ -1555,15 +1555,15 @@ const TraceableDeepResearcher = (() => {
           const parsed = JSON.parse(storageData);
           const entryCount = Array.isArray(parsed) ? parsed.length : 0;
 
-          showToast(`Using localStorage: ${kilobyteSize}KB, ${entryCount} entries`);
+          showToast(`本机存储：${kilobyteSize} 千字节，共 ${entryCount} 条记录`);
           console.debug(`LocalStorage size: ${byteSize} bytes, ${kilobyteSize}KB`);
           console.debug(`LocalStorage entries: ${entryCount}`);
         } catch (e) {
-          showToast(`LocalStorage contains invalid data: ${kilobyteSize}KB`);
+          showToast(`本机记录格式无效，大小为 ${kilobyteSize} 千字节`);
           console.error('LocalStorage parse error:', e);
         }
       } else {
-        showToast('No research history found in localStorage');
+        showToast("本机暂无研究记录");
       }
       return;
     }
@@ -1580,15 +1580,15 @@ const TraceableDeepResearcher = (() => {
         const parsed = JSON.parse(conversationCookie);
         const entryCount = Array.isArray(parsed) ? parsed.length : 0;
 
-        showToast(`Cookie found: ${kilobyteSize}KB, ${entryCount} research entries`);
+        showToast(`浏览器存储：${kilobyteSize} 千字节，共 ${entryCount} 条研究记录`);
         console.debug(`Cookie size: ${byteSize} bytes, ${kilobyteSize}KB`);
         console.debug(`Cookie entries: ${entryCount}`);
       } catch (e) {
-        showToast(`Cookie found but invalid: ${kilobyteSize}KB`);
+        showToast(`浏览器记录格式无效，大小为 ${kilobyteSize} 千字节`);
         console.error('Cookie parse error:', e);
       }
     } else {
-      showToast('No research history cookie found');
+      showToast("浏览器暂无研究记录");
     }
   }
 
@@ -1596,7 +1596,7 @@ const TraceableDeepResearcher = (() => {
   const exportHistory = () => {
     try {
       if (!conversationHistory || conversationHistory.length === 0) {
-        showToast('No research history to export');
+        showToast("暂无可导出的研究记录");
         return;
       }
 
@@ -1627,11 +1627,11 @@ const TraceableDeepResearcher = (() => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      showToast('Research history exported to JSON file');
+      showToast("研究记录已导出为数据文件");
       console.debug('History exported, entries:', conversationHistory.length);
     } catch (error) {
       console.error('Error exporting history:', error);
-      showToast('Error exporting research history');
+      showToast("研究记录导出失败");
     }
   }
 
@@ -1641,7 +1641,7 @@ const TraceableDeepResearcher = (() => {
     if (fileInput) {
       fileInput.click();
     } else {
-      showToast('Import functionality not available');
+      showToast("导入功能暂不可用");
     }
   }
 
@@ -1673,7 +1673,7 @@ const TraceableDeepResearcher = (() => {
         });
 
         if (validEntries.length === 0) {
-          showToast('No valid research entries found in the imported file');
+          showToast("导入文件中没有有效的研究记录");
           return;
         }
 
@@ -1688,9 +1688,9 @@ const TraceableDeepResearcher = (() => {
 
         // Confirm before overwriting existing history
         if (conversationHistory && conversationHistory.length > 0) {
-          if (confirm(`You have ${conversationHistory.length} existing research entries. Do you want to:
-- Click OK to MERGE imported history with existing history
-- Click Cancel to REPLACE all existing history with imported data`)) {
+          if (confirm(`当前已有 ${conversationHistory.length} 条研究记录。
+点击“确定”将导入记录与现有记录合并。
+点击“取消”使用导入数据替换全部现有记录。`)) {
             // Merge with existing history
             conversationHistory = [...mappedEntries, ...conversationHistory];
           } else {
@@ -1706,12 +1706,12 @@ const TraceableDeepResearcher = (() => {
         saveConversationHistory();
         renderHistoryEntries();
 
-        showToast(`Successfully imported ${validEntries.length} research entries`);
+        showToast(`已成功导入 ${validEntries.length} 条研究记录`);
         console.debug('Research history imported, valid entries:', validEntries.length);
 
       } catch (error) {
         console.error('Error importing history:', error);
-        showToast('Error importing research history: Invalid file format');
+        showToast("研究记录导入失败，文件格式无效");
       }
 
       // Reset the file input so the same file can be selected again
@@ -1720,7 +1720,7 @@ const TraceableDeepResearcher = (() => {
 
     reader.onerror = () => {
       console.error('Error reading file');
-      showToast('Error reading the imported file');
+      showToast("无法读取导入文件");
       event.target.value = '';
     };
 
@@ -1763,7 +1763,7 @@ const TraceableDeepResearcher = (() => {
     });
 
     // Add welcome message
-    addChatMessage('I can answer questions about the research report. What would you like to know?', false);
+    addChatMessage('可以继续提问，深入了解这份研究报告。你想了解什么？', false);
   }
 
   // Initialize speech recognition
@@ -1781,7 +1781,7 @@ const TraceableDeepResearcher = (() => {
 
     // Configure speech recognition
     recognition.continuous = false;
-    recognition.lang = 'en-US';
+    recognition.lang = 'zh-CN';
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -1794,10 +1794,10 @@ const TraceableDeepResearcher = (() => {
       finalTranscript = '';
       button.classList.add('listening');
       button.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-      button.title = 'Stop listening';
+      button.title = "停止语音输入";
 
       // Show visual feedback
-      showToast('Listening...', 1000);
+      showToast("正在聆听……", 1000);
     };
 
     recognition.onresult = (event) => {
@@ -1827,9 +1827,9 @@ const TraceableDeepResearcher = (() => {
       resetRecognition();
 
       if (event.error === 'not-allowed') {
-        showToast('Microphone access denied. Please allow microphone access in your browser settings.', 3000);
+        showToast("无法访问麦克风，请在浏览器设置中允许使用麦克风。", 3000);
       } else {
-        showToast('Speech recognition error: ' + event.error, 3000);
+        showToast("语音识别失败：" + event.error, 3000);
       }
     };
 
@@ -1842,7 +1842,7 @@ const TraceableDeepResearcher = (() => {
       isListening = false;
       button.classList.remove('listening');
       button.innerHTML = '<i class="fas fa-microphone"></i>';
-      button.title = 'Use voice input';
+      button.title = "使用语音输入";
     };
 
     // Toggle speech recognition on button click
@@ -1943,7 +1943,7 @@ const TraceableDeepResearcher = (() => {
       // Attempt to reconnect and queue the message to be sent after reconnection
       if (!reconnectWebSocket(messageToSend)) {
         // If reconnection fails or max attempts reached
-        addChatMessage('Unable to send message. Connection is unavailable.', false);
+        addChatMessage('消息发送失败，当前无法连接服务器。', false);
       }
     }
   }
@@ -1976,7 +1976,7 @@ const TraceableDeepResearcher = (() => {
     const timestampEl = document.createElement('div');
     timestampEl.className = 'chat-timestamp';
     const now = new Date();
-    timestampEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    timestampEl.textContent = now.toLocaleTimeString("zh-CN", { hour: '2-digit', minute: '2-digit' });
     messageEl.appendChild(timestampEl);
 
     // Add to chat container
@@ -2097,7 +2097,7 @@ const TraceableDeepResearcher = (() => {
       if (element.classList.contains('expanded-view')) {
         buttonIcon.classList.remove('fa-compress-alt');
         buttonIcon.classList.add('fa-compress-alt');
-        button.title = 'Collapse'; // Update title to Collapse
+        button.title = "收起"; // Update title to Collapse
 
         // Find content containers and expand their height
         const contentContainers = element.querySelectorAll('#reportContainer, #output, #chatMessages');
@@ -2114,7 +2114,7 @@ const TraceableDeepResearcher = (() => {
       } else {
         buttonIcon.classList.remove('fa-compress-alt');
         buttonIcon.classList.add('fa-expand-alt');
-        button.title = 'Expand'; // Update title to Expand
+        button.title = "展开"; // Update title to Expand
 
         // Reset heights back to original when collapsed
         const contentContainers = element.querySelectorAll('#reportContainer, #output, #chatMessages');
@@ -2203,7 +2203,7 @@ const TraceableDeepResearcher = (() => {
     
     if (!configText || configText === '[]') {
       mcpConfig.className = 'form-control mcp-config-textarea';
-      mcpConfigStatus.textContent = 'Empty configuration';
+      mcpConfigStatus.textContent = "尚未配置工具服务器";
       mcpConfigStatus.className = 'mcp-status-text';
       return true;
     }
@@ -2212,17 +2212,17 @@ const TraceableDeepResearcher = (() => {
       const parsed = JSON.parse(configText);
       
       if (!Array.isArray(parsed)) {
-        throw new Error('Configuration must be an array');
+        throw new Error("配置必须为数组");
       }
 
       // Validate each server config
       const errors = [];
       parsed.forEach((server, index) => {
         if (!server.name) {
-          errors.push(`Server ${index + 1}: missing name`);
+          errors.push(`第 ${index + 1} 个服务器缺少名称（name）`);
         }
         if (!server.command && !server.connection_url) {
-          errors.push(`Server ${index + 1}: missing command or connection_url`);
+          errors.push(`第 ${index + 1} 个服务器缺少启动命令（command）或连接地址（connection_url）`);
         }
       });
 
@@ -2231,13 +2231,15 @@ const TraceableDeepResearcher = (() => {
       }
 
       mcpConfig.className = 'form-control mcp-config-textarea valid';
-      mcpConfigStatus.textContent = `Valid JSON ✓ (${parsed.length} server${parsed.length !== 1 ? 's' : ''})`;
+      mcpConfigStatus.textContent = `配置格式正确 ✓（共 ${parsed.length} 个服务器）`;
       mcpConfigStatus.className = 'mcp-status-text valid';
       return true;
 
     } catch (error) {
       mcpConfig.className = 'form-control mcp-config-textarea invalid';
-      mcpConfigStatus.textContent = `Invalid JSON: ${error.message}`;
+      mcpConfigStatus.textContent = error instanceof SyntaxError
+        ? '配置语法有误，请检查括号、引号和逗号。'
+        : `配置无效：${error.message}`;
       mcpConfigStatus.className = 'mcp-status-text invalid';
       return false;
     }
@@ -2252,9 +2254,9 @@ const TraceableDeepResearcher = (() => {
       const parsed = JSON.parse(mcpConfig.value.trim() || '[]');
       mcpConfig.value = JSON.stringify(parsed, null, 2);
       validateMCPConfig();
-      showToast('JSON formatted successfully!');
+      showToast("配置格式化完成");
     } catch (error) {
-      showToast('Cannot format invalid JSON');
+      showToast("配置语法有误，暂时无法格式化");
     }
   };
 
@@ -2281,16 +2283,16 @@ const TraceableDeepResearcher = (() => {
     if (mcpConfig) {
       mcpConfig.value = JSON.stringify(exampleConfig, null, 2);
       validateMCPConfig();
-      showToast('Example configuration loaded!');
+      showToast("示例配置已载入");
     }
   };
 
   // Update retriever configuration for MCP
   const updateRetrieverForMCP = (enableMCP) => {
     if (enableMCP) {
-      showToast('MCP enabled - will be included in research process');
+      showToast("外部工具连接已启用，将用于研究过程");
     } else {
-      showToast('MCP disabled - using web search only');
+      showToast("外部工具连接已关闭，研究将使用网络检索");
     }
   };
 
@@ -2315,32 +2317,32 @@ const TraceableDeepResearcher = (() => {
         <button class="mcp-info-close" onclick="closeMCPInfo()">
           <i class="fas fa-times"></i>
         </button>
-        <h3>Model Context Protocol (MCP)</h3>
-        <p>MCP enables Traceable Deep Researcher to connect with external tools and data sources through a standardized protocol.</p>
+        <h3>模型上下文协议</h3>
+        <p>模型上下文协议让 Traceable Deep Researcher 通过统一协议连接外部工具和数据来源。</p>
         
-        <h4 class="highlight">Benefits:</h4>
+        <h4 class="highlight">主要用途：</h4>
         <ul>
-          <li><span class="highlight">Access Local Data:</span> Connect to databases, file systems, and APIs</li>
-          <li><span class="highlight">Use External Tools:</span> Integrate with web services and third-party tools</li>
-          <li><span class="highlight">Extend Capabilities:</span> Add custom functionality through MCP servers</li>
-          <li><span class="highlight">Maintain Security:</span> Controlled access with proper authentication</li>
+          <li><span class="highlight">访问本地数据：</span> 连接数据库、文件系统和外部接口</li>
+          <li><span class="highlight">使用外部工具：</span> 接入网络服务与第三方工具</li>
+          <li><span class="highlight">扩展能力：</span> 通过工具服务器增加自定义功能</li>
+          <li><span class="highlight">控制访问：</span> 通过身份验证限制数据和工具的访问权限</li>
         </ul>
 
-        <h4 class="highlight">Quick Start:</h4>
+        <h4 class="highlight">使用步骤：</h4>
         <ul>
-          <li>Enable MCP using the checkbox above</li>
-          <li>Click a preset to add pre-configured servers to the JSON</li>
-          <li>Or paste your own MCP configuration as a JSON array</li>
-          <li>Start your research - MCP will run with optimal settings</li>
+          <li>勾选上方选项，启用外部工具连接</li>
+          <li>点击快捷预设，将服务器添加到配置中</li>
+          <li>也可以直接粘贴自己的工具服务器配置数组</li>
+          <li>保存配置后开始研究，系统会使用已连接的工具</li>
         </ul>
 
-        <h4 class="highlight">Configuration Format:</h4>
-        <p>Each MCP server should be a JSON object with these properties:</p>
+        <h4 class="highlight">配置格式：</h4>
+        <p>每个工具服务器应为包含以下字段的对象：</p>
         <ul>
-          <li><span class="highlight">name:</span> Unique identifier (e.g., "github", "filesystem")</li>
-          <li><span class="highlight">command:</span> Command to run the server (e.g., "npx", "python")</li>
-          <li><span class="highlight">args:</span> Array of arguments (e.g., ["-y", "@modelcontextprotocol/server-github"])</li>
-          <li><span class="highlight">env:</span> Object with environment variables (e.g., {"API_KEY": "your_key"})</li>
+          <li><span class="highlight">name:</span> 服务器的唯一标识</li>
+          <li><span class="highlight">command:</span> 用于启动服务器的命令</li>
+          <li><span class="highlight">args:</span> 启动命令所需的参数数组</li>
+          <li><span class="highlight">env:</span> 环境变量对象，例如服务所需的密钥</li>
         </ul>
       </div>
     `;
@@ -2417,11 +2419,11 @@ const TraceableDeepResearcher = (() => {
       if (existingIndex !== -1) {
         // Replace existing server
         currentConfig[existingIndex] = config;
-        showToast(`Updated ${preset} MCP server configuration`);
+        showToast('工具服务器配置已更新');
       } else {
         // Add new server
         currentConfig.push(config);
-        showToast(`Added ${preset} MCP server configuration`);
+        showToast('工具服务器配置已添加');
       }
 
       mcpConfig.value = JSON.stringify(currentConfig, null, 2);
@@ -2429,7 +2431,7 @@ const TraceableDeepResearcher = (() => {
 
     } catch (error) {
       console.error('Error adding preset:', error);
-      showToast('Error adding preset configuration');
+      showToast("添加预设配置失败");
     }
   };
 
@@ -2449,7 +2451,7 @@ const TraceableDeepResearcher = (() => {
 
     // Validate configuration before collecting
     if (!validateMCPConfig()) {
-      showToast('Invalid MCP configuration - please fix errors before submitting');
+      showToast("工具配置无效，请修正后再提交");
       return null;
     }
 
@@ -2464,7 +2466,7 @@ const TraceableDeepResearcher = (() => {
       };
     } catch (error) {
       console.error('Error collecting MCP data:', error);
-      showToast('Error processing MCP configuration');
+      showToast("工具配置处理失败");
       return null;
     }
   };

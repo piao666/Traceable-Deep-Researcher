@@ -220,7 +220,7 @@ export default function Home() {
           // Show error message
           setOrderedData(prevOrder => [...prevOrder, { 
             type: 'chat', 
-            content: 'Sorry, something went wrong. Please try again.' 
+            content: "处理失败，请稍后重试。"
           } as ChatData]);
         }
       } catch (error) {
@@ -229,7 +229,7 @@ export default function Home() {
         // Add error message
         setOrderedData(prevOrder => [...prevOrder, { 
           type: 'chat', 
-          content: 'Sorry, there was an error processing your request. Please try again.' 
+          content: "请求处理失败，请稍后重试。"
         } as ChatData]);
       } finally {
         setIsProcessingChat(false);
@@ -276,7 +276,7 @@ export default function Home() {
           // Show error message in results
           setOrderedData(prevOrder => [...prevOrder, { 
             type: 'chat', 
-            content: 'I apologize, but I couldn\'t generate a proper response. Please try asking your question again.' 
+            content: "暂时无法生成有效回答，请重新提问。"
           }]);
         } else {
           // Add AI response to chat history asynchronously
@@ -304,7 +304,7 @@ export default function Home() {
         // Show error message
         setOrderedData(prevOrder => [...prevOrder, { 
           type: 'chat', 
-          content: 'Sorry, something went wrong. Please try again.' 
+          content: "处理失败，请稍后重试。"
         }]);
       }
     } catch (error) {
@@ -313,7 +313,7 @@ export default function Home() {
       // Add error message to display
       setOrderedData(prevOrder => [...prevOrder, { 
         type: 'chat', 
-        content: 'Sorry, there was an error processing your request. Please try again.' 
+        content: "请求处理失败，请稍后重试。"
       }]);
     } finally {
       setLoading(false);
@@ -396,7 +396,7 @@ export default function Home() {
           // Handle error
           setOrderedData(prevOrder => [...prevOrder, { 
             type: 'chat', 
-            content: 'Sorry, I couldn\'t generate a research response. Please try again.' 
+            content: "暂时无法生成研究结果，请重试。"
           } as ChatData]);
         }
       } catch (error) {
@@ -404,7 +404,7 @@ export default function Home() {
         // Show error message
         setOrderedData(prevOrder => [...prevOrder, { 
           type: 'chat', 
-          content: 'Sorry, there was an error processing your request. Please try again.' 
+          content: "请求处理失败，请稍后重试。"
         } as ChatData]);
       } finally {
         setLoading(false);
@@ -428,7 +428,7 @@ export default function Home() {
 
       let previousChunk = null;
       for await (const chunk of streamResponse) {
-        if (chunk.data.report != null && chunk.data.report != "Full report content here") {
+        if (chunk.data.report != null && chunk.data.report != "完整研究报告内容") {
           setOrderedData((prevOrder) => [...prevOrder, { ...chunk.data, output: chunk.data.report, type: 'report' }]);
           setLoading(false);
         
@@ -534,7 +534,7 @@ export default function Home() {
           ...prevData, 
           { 
             type: 'chat', 
-            content: "I'm sorry, I couldn't generate a complete response. Please try rephrasing your question." 
+            content: "暂时无法生成完整回答，请换一种方式提问。"
           } as ChatData
         ]);
       }
@@ -546,7 +546,7 @@ export default function Home() {
         ...prevData, 
         { 
           type: 'chat', 
-          content: "Sorry, there was an error processing your request. Please try again." 
+          content: "请求处理失败，请稍后重试。"
         } as ChatData
       ]);
     } finally {
@@ -636,7 +636,7 @@ export default function Home() {
         // Show error message
         setOrderedData(prevOrder => [...prevOrder, { 
           type: 'chat', 
-          content: 'Sorry, something went wrong. Please try again.' 
+          content: "处理失败，请稍后重试。"
         } as ChatData]);
       }
     } catch (error) {
@@ -645,7 +645,7 @@ export default function Home() {
       // Add error message
       setOrderedData(prevOrder => [...prevOrder, { 
         type: 'chat', 
-        content: 'Sorry, there was an error processing your request. Please try again.' 
+        content: "请求处理失败，请稍后重试。"
       } as ChatData]);
     } finally {
       setIsProcessingChat(false);
@@ -723,10 +723,10 @@ export default function Home() {
     const url = `${window.location.origin}/research/${currentResearchId}`;
     navigator.clipboard.writeText(url)
       .then(() => {
-        toast.success("URL copied to clipboard!");
+        toast.success("链接已复制到剪贴板");
       })
       .catch(() => {
-        toast.error("Failed to copy URL");
+        toast.error("链接复制失败，请重试");
       });
   };
 
@@ -799,7 +799,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error selecting research:', error);
-      toast.error('Could not load the selected research');
+      toast.error("无法加载所选的研究记录");
     }
   };
 

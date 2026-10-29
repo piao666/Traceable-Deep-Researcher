@@ -30,7 +30,7 @@ const ChatInput: FC<TChatInputProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const placeholder = "Any questions about this report?";
+  const placeholder = "对这份报告还有什么疑问？";
 
   const resetHeight = () => {
     if (textareaRef.current) {
@@ -126,7 +126,7 @@ const ChatInput: FC<TChatInputProps> = ({
             
             <img
               src={"/img/arrow-narrow-right.svg"}
-              alt="send"
+              alt="发送"
               width={20}
               height={20}
               className={`${disabled ? "invisible" : ""} transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:filter group-hover:drop-shadow-[0_0_2px_rgba(255,255,255,0.6)]`}

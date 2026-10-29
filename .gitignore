@@ -85,3 +85,7 @@ CURSOR_RULES.md
 *.sqlite3-*
 *.json.*.bak
 *.json.*.bak.manifest.json
+
+# Local browser verification artifacts.
+/output/playwright/
+/.playwright-cli/

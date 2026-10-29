@@ -18,7 +18,7 @@ export default function MobileHomeScreen({
   setPromptValue,
   handleDisplayResult,
   isLoading = false,
-  placeholder = "What would you like to research today?",
+  placeholder = "今天，你想研究什么？",
   handleKeyDown
 }: MobileHomeScreenProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -75,7 +75,7 @@ export default function MobileHomeScreen({
       // Add a timeout as a safety measure to prevent infinite loading
       submissionTimeoutRef.current = setTimeout(() => {
         setIsSubmitting(false);
-        toast.error("Research request took too long. Please try again.", {
+        toast.error("研究请求超时，请重试。", {
           duration: 3000,
           position: "bottom-center"
         });
@@ -96,7 +96,7 @@ export default function MobileHomeScreen({
         }
       } catch (apiError) {
         console.error("API error during research submission:", apiError);
-        toast.error("There was a problem submitting your research. Please try again.", {
+        toast.error("研究提交失败，请重试。", {
           duration: 3000,
           position: "bottom-center"
         });
@@ -143,7 +143,7 @@ export default function MobileHomeScreen({
             className="rounded-xl"
           />
         </div>
-        <p className="text-gray-400 text-sm">Say Hello to Traceable Deep Researcher, your AI partner for instant insights and comprehensive research</p>
+        <p className="text-gray-400 text-sm">欢迎使用 Traceable Deep Researcher，你的资料检索与深入研究助手。</p>
       </div>
 
       {/* Search Box */}
@@ -173,7 +173,7 @@ export default function MobileHomeScreen({
                   ? 'bg-gray-700 text-gray-500' 
                   : 'bg-sky-600 text-white hover:bg-sky-500'
               } transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50`}
-              aria-label="Start research"
+              aria-label="开始研究"
             >
               {isLoading || isSubmitting ? (
                 <div className="flex justify-center items-center">
@@ -188,14 +188,14 @@ export default function MobileHomeScreen({
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-2 text-center px-2">
-          Enter any research topic or specific question
+          输入研究主题或具体问题
         </p>
       </div>
 
       {/* Recent research history */}
       {recentHistory.length > 0 && (
         <div className="mt-10 px-4">
-          <h2 className="text-sm font-medium text-gray-400 mb-3 px-2">Recent Research</h2>
+          <h2 className="text-sm font-medium text-gray-400 mb-3 px-2">最近的研究</h2>
           <div className="space-y-2">
             {recentHistory.map((item) => (
               <button
@@ -205,7 +205,7 @@ export default function MobileHomeScreen({
               >
                 <h3 className="text-sm font-medium text-gray-200 line-clamp-1">{item.question}</h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  {new Date(item.timestamp || Date.now()).toLocaleString()}
+                  {new Date(item.timestamp || Date.now()).toLocaleString('zh-CN')}
                 </p>
               </button>
             ))}
@@ -215,7 +215,7 @@ export default function MobileHomeScreen({
               href="/history"
               className="inline-block text-sm text-sky-400 hover:text-sky-300 transition-colors"
             >
-              View all research
+              查看全部研究
             </a>
           </div>
         </div>
@@ -224,19 +224,19 @@ export default function MobileHomeScreen({
       {/* Features or tips section */}
       <div className="mt-auto pb-6 pt-8 px-4">
         <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-gray-300 mb-2">Research Tips</h3>
+          <h3 className="text-sm font-medium text-gray-300 mb-2">研究小提示</h3>
           <ul className="text-xs text-gray-400 space-y-1.5">
             <li className="flex items-start">
               <span className="text-sky-400 mr-1.5">•</span>
-              <span>Ask specific questions for better results</span>
+              <span>问题越具体，研究结果越有针对性</span>
             </li>
             <li className="flex items-start">
               <span className="text-sky-400 mr-1.5">•</span>
-              <span>Include key details like dates or context</span>
+              <span>补充时间范围、背景等重要信息</span>
             </li>
             <li className="flex items-start">
               <span className="text-sky-400 mr-1.5">•</span>
-              <span>Chat with your research results for deeper insights</span>
+              <span>针对报告继续提问，进一步理解研究结果</span>
             </li>
           </ul>
         </div>
@@ -312,4 +312,4 @@ export default function MobileHomeScreen({
       `}</style>
     </div>
   );
-} 
+}
