@@ -9,8 +9,11 @@ and follow-up questions. Maintained by **Piao666**.
 ## Docker quick start
 
 1. Copy `.env.example` to `.env` and configure your model and search provider.
-2. Run `docker compose up --build -d`.
-3. Open [localhost:8000](http://localhost:8000).
+2. For a new installation, initialize report storage with
+   `docker compose run --rm --build research python scripts/migrate_report_store.py --init-only`.
+   Existing installations must follow the [history migration](docs/migration.md) first.
+3. Run `docker compose up --build -d`.
+4. Open [localhost:8000](http://localhost:8000).
 
 For the optional Next.js interface run `docker compose --profile web up --build -d`,
 then open [localhost:3000](http://localhost:3000).

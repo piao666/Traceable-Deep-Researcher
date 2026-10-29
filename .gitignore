@@ -74,3 +74,14 @@ CURSOR_RULES.md
 
 # Local evaluation runs (reports, manifests and replay output).
 /evals/results/
+
+# Local report database, SQLite sidecars and legacy migration backups.
+/data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.json.*.bak
+*.json.*.bak.manifest.json

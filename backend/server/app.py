@@ -11,7 +11,7 @@ from pathlib import Path
 warnings.filterwarnings("ignore", message="Valid config keys have changed in V2")
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile, BackgroundTasks, HTTPException, Query
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -35,8 +35,9 @@ from traceable_deep_researcher.utils.enum import Tone
 from chat.chat import ChatAgentWithMemory
 
 from server.report_store import ReportStore
+from server.tasks.repository import ReportVersionConflict
 
-# MongoDB services removed - no database persistence needed
+# Report/history persistence is owned by the SQLite repository.
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -71,6 +72,7 @@ class ChatRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    await report_store.initialize()
     os.makedirs("outputs", exist_ok=True)
     app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
     
@@ -88,10 +90,12 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning(f"Frontend directory not found: {frontend_path}")
     
-    logger.info("Traceable Deep Researcher API ready - local mode (no database persistence)")
-    yield
-    # Shutdown
-    logger.info("Research API shutting down")
+    logger.info("Traceable Deep Researcher API ready - SQLite report storage")
+    try:
+        yield
+    finally:
+        await report_store.close()
+        logger.info("Research API shutting down")
 
 # App initialization
 app = FastAPI(title="Traceable Deep Researcher", lifespan=lifespan)
@@ -131,7 +135,7 @@ app.mount("/site", StaticFiles(directory=frontend_dir), name="site")
 # WebSocket manager
 manager = WebSocketManager()
 
-report_store = ReportStore(Path(os.getenv('REPORT_STORE_PATH', os.path.join('data', 'reports.json'))))
+report_store = ReportStore()
 
 # Constants
 DOC_PATH = os.getenv("DOC_PATH", "./my-docs")
@@ -178,11 +182,12 @@ async def read_report(request: Request, research_id: str):
     return FileResponse(docx_path)
 
 
-# Simplified API routes - no database persistence
+# Report/history routes retain their existing response envelope.
 @app.get("/api/reports")
-async def get_all_reports(report_ids: str = None):
+async def get_all_reports(report_ids: str = None, limit: int | None = Query(default=None, ge=1, le=500),
+                          offset: int = Query(default=0, ge=0)):
     report_ids_list = report_ids.split(",") if report_ids else None
-    reports = await report_store.list_reports(report_ids_list)
+    reports = await report_store.list_reports(report_ids_list, limit=limit, offset=offset)
     return {"reports": reports}
 
 
@@ -198,6 +203,8 @@ async def get_report_by_id(research_id: str):
 async def create_or_update_report(request: Request):
     try:
         data = await request.json()
+        if not isinstance(data, dict):
+            raise ValueError("Report must be a JSON object")
         research_id = data.get("id", "temp_id")
 
         now_ms = int(time.time() * 1000)
@@ -218,28 +225,24 @@ async def create_or_update_report(request: Request):
 
         await report_store.upsert_report(research_id, report)
         return {"success": True, "id": research_id}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Error processing report creation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Error processing report creation")
+        raise HTTPException(status_code=500, detail="Report storage failed") from e
 
 
 @app.put("/api/reports/{research_id}")
 async def update_report(research_id: str, request: Request):
-    existing = await report_store.get_report(research_id)
-    if existing is None:
+    try:
+        data = await request.json()
+        if not isinstance(data, dict):
+            raise ValueError("Report patch must be a JSON object")
+        updated = await report_store.patch_report(research_id, data, timestamp=int(time.time() * 1000))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    if not updated:
         raise HTTPException(status_code=404, detail="Report not found")
-
-    data = await request.json()
-    now_ms = int(time.time() * 1000)
-
-    updated = {
-        **existing,
-        **{k: v for k, v in data.items() if v is not None},
-        "id": research_id,
-        "timestamp": now_ms,
-    }
-
-    await report_store.upsert_report(research_id, updated)
     return {"success": True, "id": research_id}
 
 
@@ -312,18 +315,14 @@ async def research_report_chat(research_id: str, request: Request):
         "metadata": {"tool_calls": tool_calls_metadata} if tool_calls_metadata else None,
     }
 
-    new_chat = list(history)
-    for msg in incoming_messages:
-        if isinstance(msg, dict):
-            new_chat.append(msg)
-    new_chat.append(response_message)
-
-    updated = {
-        **report,
-        "chatMessages": new_chat,
-        "timestamp": now_ms,
-    }
-    await report_store.upsert_report(research_id, updated)
+    messages_to_append = [msg for msg in incoming_messages if isinstance(msg, dict)] + [response_message]
+    try:
+        saved = await report_store.append_chat_messages(research_id, messages_to_append, timestamp=now_ms,
+                                                       expected_version=report.get("report_version"))
+    except ReportVersionConflict as e:
+        raise HTTPException(status_code=409, detail="Report changed while generating the reply; reload and retry") from e
+    if not saved:
+        raise HTTPException(status_code=404, detail="Report was deleted while generating the reply")
     return {"success": True, "id": research_id, "response": response_message}
 
 

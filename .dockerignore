@@ -1,5 +1,8 @@
 .git
 .venv
+.venv-graphify
+graphify-out
+evals/results
 **/node_modules
 **/.next
 **/__pycache__
@@ -12,5 +15,13 @@ outputs
 output
 logs
 data
+**/*.db
+**/*.db-*
+**/*.sqlite
+**/*.sqlite-*
+**/*.sqlite3
+**/*.sqlite3-*
+**/*.json.*.bak
+**/*.json.*.bak.manifest.json
 my-docs
 *.egg-info

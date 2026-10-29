@@ -1,33 +1,12 @@
 """POST /api/reports/{id}/chat must be a single LLM-backed handler (#1979)."""
 
-import importlib
-import os
-import sys
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-BACKEND_DIR = REPO_ROOT / "backend"
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
-
-
 @pytest.fixture()
-def app_module(tmp_path, monkeypatch):
-    monkeypatch.setenv("REPORT_STORE_PATH", str(tmp_path / "reports.json"))
-    # Avoid StaticFiles path errors if frontend layout differs in CI
-    frontend = REPO_ROOT / "frontend"
-    if not frontend.exists():
-        (tmp_path / "frontend" / "static").mkdir(parents=True)
-        monkeypatch.chdir(tmp_path)
-
-    # Import app module fresh enough to use ReportStore path env
-    if "server.app" in sys.modules:
-        del sys.modules["server.app"]
-    mod = importlib.import_module("server.app")
-    return mod
+def app_module(report_app):
+    return report_app
 
 
 def test_single_post_report_chat_route(app_module):
@@ -68,9 +47,10 @@ async def test_report_chat_runs_llm_and_persists(app_module):
     async def get_report(rid):
         return stored if rid == "r1" else None
 
-    async def upsert(rid, report):
+    async def append(rid, messages, *, timestamp, expected_version=None):
         nonlocal stored
-        stored = report
+        stored = {**stored, "chatMessages": stored["chatMessages"] + messages, "timestamp": timestamp}
+        return True
 
     class FakeRequest:
         async def json(self):
@@ -78,7 +58,7 @@ async def test_report_chat_runs_llm_and_persists(app_module):
 
     with (
         patch.object(app_module.report_store, "get_report", side_effect=get_report),
-        patch.object(app_module.report_store, "upsert_report", side_effect=upsert),
+        patch.object(app_module.report_store, "append_chat_messages", side_effect=append),
         patch.object(
             app_module,
             "ChatAgentWithMemory",

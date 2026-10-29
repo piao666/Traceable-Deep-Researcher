@@ -7,7 +7,13 @@ selection and writing. `backend/server/app.py` serves the API and static UI;
 `multi_agents` and `deep_agents`.
 
 Current records include research_sources, visited URLs, research JSON logs,
-streamed progress and JSON ReportStore. These are not verified claim lineage.
+streamed progress and SQLite report history. These are not verified claim lineage.
+
+Since M1/A1, the ReportStore facade delegates report/history CRUD to a SQLAlchemy
+SQLite repository. Schema upgrades and backed-up JSON imports run explicitly via
+`scripts/migrate_report_store.py`; API startup only validates schema/import status.
+Content versions and chats are persisted transactionally, with unavailable lineage.
+Task execution still uses the original HTTP/WS ownership; A2–A7 remain future work.
 
 Planned integration from Traceable Research Agent's current lineage-v1 pipeline:
 

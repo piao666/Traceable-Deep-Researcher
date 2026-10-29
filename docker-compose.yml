@@ -8,6 +8,7 @@ services:
       - path: .env
         required: false
     environment:
+      TDR_DATABASE_URL: ${TDR_DATABASE_URL:-sqlite:////usr/src/app/data/tdr.db}
       REPORT_STORE_PATH: /usr/src/app/data/reports.json
     volumes:
       - ./my-docs:/usr/src/app/my-docs

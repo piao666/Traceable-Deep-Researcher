@@ -4,7 +4,9 @@
 
 - [项目仓库](https://github.com/piao666/Traceable-Deep-Researcher)
 - [联系邮箱](mailto:dahaipiao9@gmail.com)
-- 复制 `.env.example` 为 `.env`，配置模型和搜索服务，执行 `docker compose up --build -d`。
+- 复制 `.env.example` 为 `.env`，配置模型和搜索服务。
+- 全新安装先执行 `docker compose run --rm --build research python scripts/migrate_report_store.py --init-only` 初始化报告数据库；已有历史的部署先按[迁移说明](docs/migration.md)停写、预检和导入。
+- 执行 `docker compose up --build -d` 启动。
 - 默认界面：[localhost:8000](http://localhost:8000)。
 - Next.js 界面：`docker compose --profile web up --build -d`，访问 [localhost:3000](http://localhost:3000)。
 
