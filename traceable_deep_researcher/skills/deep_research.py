@@ -11,6 +11,7 @@ from traceable_deep_researcher.llm_provider.generic.base import ReasoningEfforts
 from ..utils.llm import create_chat_completion
 from ..utils.enum import ReportType, ReportSource, Tone
 from ..actions.query_processing import get_search_results
+from ..runtime.checkpoints import checkpoint_call, CheckpointError
 
 logger = logging.getLogger(__name__)
 
@@ -391,7 +392,8 @@ Return ONLY a JSON object using this exact schema:
             learnings: List[str] = None,
             citations: Dict[str, str] = None,
             visited_urls: Set[str] = None,
-            on_progress=None
+            on_progress=None,
+            query_path='root'
     ) -> Dict[str, Any]:
         """Conduct deep iterative research"""
         print(f"\n📊 DEEP RESEARCH: depth={depth}, breadth={breadth}, query={query[:100]}...", flush=True)
@@ -415,7 +417,9 @@ Return ONLY a JSON object using this exact schema:
 
         # Generate search queries
         print(f"🔎 Generating {breadth} search queries...", flush=True)
-        serp_queries = await self.generate_search_queries(query, num_queries=breadth)
+        serp_queries = await checkpoint_call(self,'deep_plan:'+query_path,
+            {'query':query,'breadth':breadth,'depth':depth},
+            lambda:self.generate_search_queries(query,num_queries=breadth))
         print(f"✅ Generated {len(serp_queries)} queries: {[q['query'] for q in serp_queries]}", flush=True)
         progress.total_queries = len(serp_queries)
         if not serp_queries:
@@ -431,7 +435,7 @@ Return ONLY a JSON object using this exact schema:
         # Process queries with concurrency limit
         semaphore = asyncio.Semaphore(self.concurrency_limit)
 
-        async def process_query(serp_query: Dict[str, str]) -> Optional[Dict[str, Any]]:
+        async def execute_query(serp_query: Dict[str, str]) -> Optional[Dict[str, Any]]:
             async with semaphore:
                 try:
                     progress.current_query = serp_query['query']
@@ -440,6 +444,8 @@ Return ONLY a JSON object using this exact schema:
 
                     from .. import TraceableDeepResearcher
                     researcher = TraceableDeepResearcher(
+                        **({'run_context':self.researcher.run_context.child(scope=serp_query['_checkpoint_scope'])}
+                           if getattr(self.researcher,'run_context',None) else {}),
                         query=serp_query['query'],
                         report_type=ReportType.ResearchReport.value,
                         report_source=ReportSource.Web.value,
@@ -473,6 +479,7 @@ Return ONLY a JSON object using this exact schema:
                         on_progress(progress)
 
                     return {
+                        '_query_id':serp_query['_checkpoint_scope'],
                         'learnings': results['learnings'],
                         'visited_urls': list(visited),
                         'followUpQuestions': results['followUpQuestions'],
@@ -482,6 +489,8 @@ Return ONLY a JSON object using this exact schema:
                         'sources': sources if sources else []
                     }
 
+                except CheckpointError:
+                    raise
                 except Exception as e:
                     import traceback
                     error_details = traceback.format_exc()
@@ -490,7 +499,21 @@ Return ONLY a JSON object using this exact schema:
                     return None
 
         # Process queries concurrently with limit
-        tasks = [process_query(query) for query in serp_queries]
+        async def process_query(index, child_query):
+            child_query={**child_query,'_checkpoint_scope':f'{query_path}/{index}'}
+            async def execute():
+                value=await execute_query(child_query)
+                if value is None:
+                    raise RuntimeError('深度研究分支执行失败')
+                return value
+            try:
+                return await checkpoint_call(self,'deep_query:'+child_query['_checkpoint_scope'],
+                    {'query':child_query,'depth':depth},execute)
+            except CheckpointError:
+                raise
+            except RuntimeError:
+                return None
+        tasks = [process_query(index, child) for index,child in enumerate(serp_queries)]
         results = await asyncio.gather(*tasks)
         results = [r for r in results if r is not None]
 
@@ -556,7 +579,8 @@ Return ONLY a JSON object using this exact schema:
                     learnings=all_learnings,
                     citations=all_citations,
                     visited_urls=all_visited_urls,
-                    on_progress=on_progress
+                    on_progress=on_progress,
+                    query_path=result['_query_id']
                 )
 
                 all_learnings = deeper_results['learnings']
@@ -591,7 +615,8 @@ Return ONLY a JSON object using this exact schema:
         # Log initial costs
         initial_costs = self.researcher.get_costs()
 
-        follow_up_questions = await self.generate_research_plan(self.researcher.query)
+        follow_up_questions = await checkpoint_call(self,'deep_initial_plan',{'query':self.researcher.query},
+            lambda:self.generate_research_plan(self.researcher.query))
         answers = ["Automatically proceeding with research"] * len(follow_up_questions)
 
         qa_pairs = [f"Q: {q}\nA: {a}" for q, a in zip(follow_up_questions, answers)]

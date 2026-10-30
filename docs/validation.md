@@ -1,5 +1,102 @@
 # Migration validation — 2026-10-15
 
+## M1 persistent tasks, recovery, exports and history — 2026-10-30
+
+The detailed plans were written before their implementations:
+[A2/A3](m1-a2-a3-implementation-plan.zh-CN.md),
+[A4/A5](m1-a4-a5-implementation-plan.zh-CN.md),
+[A6/A7](m1-a6-a7-implementation-plan.zh-CN.md).
+
+- Combined offline regression: **230 passed in 120.30s**, no skips. Covers
+  runtime/evals, task contracts/API/worker/leases/events, result adapters, exports,
+  report storage/migration/API compatibility and quality metrics.
+- Full-dependency Linux stage/connection tests: **42 passed in 14.16s**, no skips;
+  one existing langchain-community deprecation warning. Includes real ASGI socket
+  cleanup and basic/detailed/deep completed-stage reuse after injected failures.
+- Final task image acceptance: **8 checks in 34.39s**, no cleanup errors. Actual
+  Linux API and native PDF/DOCX/Unicode Markdown, fixed research boundary,
+  durable queue, process kill/replacement, interrupted/resume/cancel and history.
+- A1 storage acceptance on schema v4: **13 checks in 64.80s**, no cleanup errors.
+  Includes legacy import, backups/restore and missing/unknown schema refusal.
+- `node frontend/nextjs/tests/task-events.cjs` passes duplicate/gap/attempt-reset
+  and final-body replacement assertions. Next.js production build passes
+  compilation, lint, TypeScript and route generation, including `/tasks/[id]`,
+  `/history` and the dynamic research proxy.
+- Real browser checks against an isolated production frontend and fixed runner:
+  reload during research retains one ID and completes; explicit cancel publishes
+  no report; mobile uses the same task API; native downloads pass header/Unicode
+  checks; clearing browser caches still shows server history. 390×844 screenshot
+  inspected, without horizontal overflow. Artifacts are ignored under
+  `output/playwright/`; temporary service data is separate from deployment data.
+- Real WebSocket testing exposed a cancellation-time queue reference leak; the
+  manager now drops ownership before awaits, then joins the sender. Recheck passes.
+- All research/search/judge outputs are fixed fixtures. Provider calls: **0**.
+  Linux test containers have no runtime external network; browser fixture blocks
+  outgoing DNS/connections. No real `.env` or deployment data is used by tests.
+- Additional WAL-specific regression: the 10 lease/storage tests pass in 2.94s;
+  the new backup case keeps a committed WAL writer open and verifies those pages
+  exist in the restored database. No application change followed this check.
+
+Reproduce the host suite with `TDR_BLOCK_NETWORK=1`,
+`LANGCHAIN_TRACING_V2=false` and:
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/runtime tests/evals tests/backend/test_task_contracts.py tests/backend/test_task_api.py tests/backend/test_task_worker.py tests/backend/test_task_leases.py tests/backend/test_task_websocket.py tests/backend/test_export_jobs.py tests/backend/test_research_result_adapters.py tests/backend/test_report_repository.py tests/backend/test_report_store_migration.py tests/backend/test_report_storage_api.py tests/backend/test_report_migration_cli.py tests/backend/test_report_chat_route_uniqueness.py tests/backend/test_container_smoke_cleanup.py tests/test_quality_metrics.py -q --tb=short
+```
+
+In a full-dependency Linux test image, mount the current backend/core/multi_agents
+and tests read-only, use `--network none`, then run:
+
+```sh
+python -m pytest tests/integration tests/test_deep_research_parsing.py tests/test_planning_sources.py -q --tb=short
+python scripts/verify_task_container.py --image tdr-task-validation:20261030
+python scripts/verify_a1_container.py --image tdr-task-validation:20261030
+```
+
+The last two commands run on the Docker host, not inside its test container.
+The minimal host venv is insufficient for the integration suite; the production
+dependency image supplies the actual research classes and native export libraries.
+
+Scope limits: manual resume, single API process/research worker; multi-agent
+final-result checkpoint only. Human-review/graph-node recovery, static/embedded
+entry modernization, evidence lineage and live model quality remain M2–M4.
+Incomplete remote calls can be repeated and charged; these fixtures establish
+engineering behavior, not model research quality. Commit/push requires an explicit
+user request and is separate from these acceptance checks.
+
+### Local deployment cutover (applied after explicit authorization)
+
+- Compose production images for both services built successfully; frontend Docker
+  production compilation/type/lint and route generation passed in 98.7s.
+- Read-only preflight: schema `[1]`, reports `0`, chat messages `0`, integrity `ok`,
+  no legacy JSON. There was no old JSON to import.
+- Previous images are retained as `traceable-deep-researcher:pre-m1-20261030`
+  (`2858473e8341…`) and `traceable-deep-researcher-web:pre-m1-20261030`
+  (`d83674a5d3d9…`). Both services now run the newly built `:local` images:
+  backend `98e361366d40…`, frontend `0ce69af21d56…`.
+- Automatic approval rejected the command to stop web/research and migrate the
+  actual persistent DB: authorization covered implementation/acceptance but did
+  not explicitly cover this service interruption and live schema change.
+  That initial command did not execute. The user subsequently replied “授权”.
+- After that authorization: stopped both services, ran the explicit `--init-only`
+  migration, verified its consistent v1 backup, then started the built images with
+  `docker compose --profile web up -d --no-build --pull never research web`.
+  Actual schema is now `[1,2,3,4]`, integrity `ok`; reports/chats remain `0/0`,
+  task/export counts `0/0`. No real research was submitted.
+- Backup: `data/backups/tdr-6ffcef5fecad400082d760983405d814.sqlite3`, SHA-256
+  `fb89062c0fd311a84d4de073e1cdc967be9140233779ccee54b928043fd0c54b`.
+  Restoring with SQLite backup API into an independent in-memory DB confirms v1,
+  integrity `ok` and matching report/chat counts. Original backup is unchanged.
+- GET checks all return 200: API `/api/research`, `/api/reports` on port 8000;
+  frontend `/`, `/history`, `/api/research` and paginated `/api/reports` on port
+  3000. Running container image IDs match the built images. Exact migration and
+  rollback precautions are in [migration](migration.md). Do not run the v1 image
+  against v4; preserve the new database before rollback after any new writes.
+- Isolated browser, port 3001 frontend and labeled fixture container/volume/network
+  were cleaned up successfully (`cleanup_errors=[]`). Actual upgraded services
+  on ports 3000/8000 are running. No provider calls were performed; Git delivery
+  is separate and only performed when explicitly requested.
+
 ## Completed checks
 
 - Python package installation and public `TraceableDeepResearcher` import.

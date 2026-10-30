@@ -144,6 +144,7 @@ const ResearchSidebar: React.FC<ResearchSidebarProps> = ({
               >
                 <div className="flex justify-between items-center mb-5 sm:mb-6">
                   <h2 className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">研究记录</h2>
+                  <Link href="/history" className="text-sm text-teal-300">查看全部</Link>
                   <button
                     onClick={toggleSidebar}
                     className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-800/60 text-white rounded-full shadow-lg hover:bg-gray-800 transition-all duration-300 group"

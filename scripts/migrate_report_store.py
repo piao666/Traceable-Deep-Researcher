@@ -22,15 +22,20 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--apply", action="store_true", help="Back up and import; stop all JSON writers first")
     mode.add_argument("--init-only", action="store_true", help="Initialize/check schema without importing history")
+    mode.add_argument('--backup-only',action='store_true',help='Create an SQLite-consistent backup without upgrading')
     parser.add_argument("--update-imported", action="store_true", help="Allow same-source deltas only while the DB target still matches its last import")
     parser.add_argument("--backup-dir", type=Path)
     args = parser.parse_args(argv)
     database = None
     try:
         database = Database(args.database_url)
-        if args.init_only:
+        if args.backup_only:
+            result={'valid':True,'database_backup':str(database.backup()),'history_imported':False}
+        elif args.init_only:
             database.migrate()
             result = {"valid": True, "schema_initialized": True, "history_imported": False}
+            if database.last_backup:
+                result['database_backup']=str(database.last_backup)
         else:
             # Validate input before any writes; apply then serializes schema setup
             # before querying it, including when another migrator is initializing.

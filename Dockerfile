@@ -64,4 +64,4 @@ WORKDIR /usr/src/app
 
 # Copy the rest of the application files with proper ownership
 COPY --chown=traceable-deep-researcher:traceable-deep-researcher ./ ./
-CMD uvicorn main:app --host ${HOST} --port ${PORT} --workers ${WORKERS}
+CMD ["python", "-m", "backend.server.start"]

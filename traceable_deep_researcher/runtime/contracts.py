@@ -65,10 +65,12 @@ class RunContext:
     event_sink: EventSink | None = None
     checkpoint_store: CheckpointStore | None = None
     review_inbox: ReviewInbox | None = None
+    checkpoint_scope: str = 'root'
 
-    def child(self) -> RunContext:
+    def child(self, *, scope: str | None = None) -> RunContext:
         """Create a distinct span in the same attempt, retaining injected services."""
-        return replace(self, span_id=uuid4().hex, parent_span_id=self.span_id)
+        return replace(self, span_id=uuid4().hex, parent_span_id=self.span_id,
+                       checkpoint_scope=self.checkpoint_scope+'/'+(scope or uuid4().hex))
 
 
 @dataclass

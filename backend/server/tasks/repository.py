@@ -9,7 +9,7 @@ from sqlalchemy import delete, insert, select, update
 from ..storage.models import reports, report_versions, report_chats
 
 
-STORAGE_FIELDS = {"origin", "lineage_status", "report_version"}
+STORAGE_FIELDS = {"origin", "lineage_status", "report_version", "task_id", "research_id"}
 
 
 class ReportVersionConflict(RuntimeError):
@@ -60,6 +60,8 @@ class ReportRepository:
             .order_by(report_chats.c.position)).scalars()]
         if metadata:
             result.update(origin=row["origin"], lineage_status=row["lineage_status"], report_version=row["current_version"])
+            if row['task_id']:
+                result.update(origin='task',research_id=row['task_id'])
         return result
 
     def get_report(self, report_id):
@@ -82,6 +84,17 @@ class ReportRepository:
 
     def _upsert(self, conn, report_id, record, *, origin="client"):
         current = conn.execute(select(reports).where(reports.c.report_id == report_id)).mappings().first()
+        if current and current['task_id']:
+            previous=json.loads(current['payload_json'])
+            if any(record.get(key) not in (None,previous.get(key)) for key in ('question','answer')):
+                raise ReportVersionConflict('任务报告由服务器管理，旧缓存不能覆盖研究正文')
+            old_messages=[json.loads(value) for value in conn.execute(select(report_chats.c.payload_json)
+                .where(report_chats.c.report_id==report_id).order_by(report_chats.c.position)).scalars()]
+            incoming=record.get('chatMessages',[])
+            if incoming[:len(old_messages)]!=old_messages:
+                incoming=old_messages
+            record={**previous,'timestamp':max(record.get('timestamp',0),previous.get('timestamp',0)),
+                    'chatMessages':incoming}
         if current and origin == "client" and "timestamp" in record:
             record = {**record, "timestamp": max(record["timestamp"], current["timestamp"])}
         payload = {k: v for k, v in record.items() if k != "chatMessages"}

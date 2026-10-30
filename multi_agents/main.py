@@ -66,8 +66,12 @@ def open_task():
 
     return task
 
-async def run_research_task(query, websocket=None, stream_output=None, tone=Tone.Objective, headers=None):
+async def run_research_task(query, websocket=None, stream_output=None, tone=Tone.Objective, headers=None, task_overrides=None):
     task = open_task()
+    if task_overrides is not None:
+        if set(task_overrides) - {'include_human_feedback', 'publish_formats'}:
+            raise ValueError('Unsupported server task overrides')
+        task.update(task_overrides)
     task["query"] = query
 
     chief_editor = ChiefEditorAgent(task, websocket, stream_output, tone, headers)

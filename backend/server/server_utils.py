@@ -23,6 +23,7 @@ from datetime import datetime
 from fastapi import HTTPException, WebSocketDisconnect
 import logging
 import hashlib
+from uuid import uuid4
 
 from .multi_agent_runner import run_multi_agent_task
 
@@ -43,7 +44,7 @@ class CustomLogsHandler:
     def __init__(self, websocket, task: str):
         self.logs = []
         self.websocket = websocket
-        sanitized_filename = sanitize_filename(f"task_{int(time.time())}_{task}")
+        sanitized_filename = 'task_'+uuid4().hex
         self.log_file = os.path.join("outputs", f"{sanitized_filename}.json")
         self.timestamp = datetime.now().isoformat()
         # Initialize log file with metadata
@@ -333,6 +334,9 @@ async def execute_multi_agents(manager) -> Any:
 
 
 async def handle_websocket_communication(websocket, manager):
+    if getattr(manager, 'task_service', None) is not None:
+        from .tasks.events import handle_task_websocket
+        return await handle_task_websocket(websocket, manager, chat_handler=handle_chat_command)
     running_task: asyncio.Task | None = None
 
     def run_long_running_task(awaitable: Awaitable) -> asyncio.Task:

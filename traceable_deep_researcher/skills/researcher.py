@@ -16,6 +16,7 @@ from ..actions.utils import stream_output
 from ..document import DocumentLoader, LangChainDocumentLoader, OnlineDocumentLoader
 from ..utils.enum import ReportSource, ReportType
 from ..utils.logging_config import get_json_handler
+from ..runtime.checkpoints import checkpoint_call, digest
 
 
 class ResearchConductor:
@@ -48,6 +49,10 @@ class ResearchConductor:
         self._mcp_query_count = 0
 
     async def _get_initial_search_results(self, query, query_domains=None):
+        return await checkpoint_call(self,'initial_search_results:'+digest({'query':query,'domains':query_domains}),{'query':query,'domains':query_domains},
+            lambda:self._initial_search_results(query,query_domains))
+
+    async def _initial_search_results(self, query, query_domains=None):
         await stream_output(
             "logs",
             "planning_research",
@@ -66,6 +71,10 @@ class ResearchConductor:
         return search_results
 
     async def plan_research(self, query, query_domains=None, *, search_results=None):
+        return await checkpoint_call(self,'plan_ready:'+digest({'query':query,'domains':query_domains}),{'query':query,'domains':query_domains,'search_results':search_results},
+            lambda:self._plan_research(query,query_domains,search_results=search_results))
+
+    async def _plan_research(self, query, query_domains=None, *, search_results=None):
         """Plan sub-queries, optionally using results already obtained for this pass."""
         if search_results is None:
             search_results = await self._get_initial_search_results(query, query_domains)

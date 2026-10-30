@@ -32,7 +32,7 @@ def test_schema_is_explicit_and_versions_are_checked(tmp_path):
     db.migrate()
     db.check_schema()
     with db.engine.begin() as conn:
-        conn.execute(text("UPDATE schema_migrations SET version=999"))
+        conn.execute(text("UPDATE schema_migrations SET version=999 WHERE version=(SELECT MAX(version) FROM schema_migrations)"))
     with pytest.raises(SchemaError):
         db.check_schema()
     with pytest.raises(SchemaError):

@@ -241,10 +241,10 @@ class Smoke:
         self.refused(negative, "missing-schema", "Storage is not initialized")
         self.passed("uninitialized schema refuses API startup")
         self.migrate(negative, "--init-only")
-        self.python(negative, f"import sqlite3; c=sqlite3.connect('{DATA}/tdr.db'); c.execute('UPDATE schema_migrations SET version=999'); c.commit()")
+        self.python(negative, f"import sqlite3; c=sqlite3.connect('{DATA}/tdr.db'); c.execute('UPDATE schema_migrations SET version=999 WHERE version=(SELECT MAX(version) FROM schema_migrations)'); c.commit()")
         self.refused(negative, "unknown-schema", "Unsupported or modified storage schema")
         self.passed("unknown schema version refuses API startup")
-        self.python(negative, f"import sqlite3; from pathlib import Path; c=sqlite3.connect('{DATA}/tdr.db'); c.execute('UPDATE schema_migrations SET version=1'); c.commit(); Path('{DATA}/reports.json').write_text('{{\"old\":{{\"id\":\"old\"}}}}')")
+        self.python(negative, f"import sqlite3; from pathlib import Path; from backend.server.storage.database import SCHEMA_VERSION; c=sqlite3.connect('{DATA}/tdr.db'); c.execute('UPDATE schema_migrations SET version=? WHERE version=999',(SCHEMA_VERSION,)); c.commit(); Path('{DATA}/reports.json').write_text('{{\"old\":{{\"id\":\"old\"}}}}')")
         self.refused(negative, "unimported-history", "Unmigrated or changed legacy history")
         self.passed("unimported legacy file refuses API startup")
 

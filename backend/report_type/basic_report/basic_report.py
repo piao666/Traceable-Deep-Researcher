@@ -22,6 +22,7 @@ class BasicReport:
         mcp_configs=None,
         mcp_strategy=None,
         max_search_results=None,
+        run_context=None,
     ):
         self.query = query
         self.query_domains = query_domains
@@ -33,6 +34,7 @@ class BasicReport:
         self.config_path = config_path
         self.websocket = websocket
         self.headers = headers or {}
+        self.run_context = run_context
         
         # Generate a unique research ID for this report
         self.research_id = self._generate_research_id(query)
@@ -50,6 +52,8 @@ class BasicReport:
             "websocket": self.websocket,
             "headers": self.headers,
         }
+        if run_context is not None:
+            traceable_deep_researcher_params['run_context']=run_context
 
         # Add MCP parameters if provided
         if mcp_configs is not None:

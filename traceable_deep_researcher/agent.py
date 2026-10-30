@@ -23,6 +23,7 @@ from .llm_provider import GenericLLMProvider
 from .memory import Memory
 from .prompts import get_prompt_family
 from .runtime import RunContext
+from .runtime.checkpoints import checkpoint_call
 from .skills.browser import BrowserManager
 from .skills.context_manager import ContextManager
 from .skills.curator import SourceCurator
@@ -345,6 +346,9 @@ class TraceableDeepResearcher:
                 logging.getLogger('research').error(f"Error in _log_event: {e}", exc_info=True)
 
     async def conduct_research(self, on_progress=None):
+        return await checkpoint_call(self,'research_complete',{},lambda:self._conduct_research(on_progress))
+
+    async def _conduct_research(self, on_progress=None):
         """Conduct the research process.
 
         This method orchestrates the main research workflow including
@@ -471,6 +475,12 @@ class TraceableDeepResearcher:
         ext_context=None,
         custom_prompt="",
     ) -> str:
+        inputs={'existing_headers':existing_headers,'relevant_written_contents':relevant_written_contents,
+                'ext_context':ext_context,'custom_prompt':custom_prompt}
+        return await checkpoint_call(self,'report_written',inputs,
+            lambda:self._write_report(existing_headers,relevant_written_contents,ext_context,custom_prompt))
+
+    async def _write_report(self, existing_headers, relevant_written_contents, ext_context, custom_prompt) -> str:
         """Write the research report.
 
         Args:

@@ -6,7 +6,7 @@ metadata = MetaData()
 reports = Table("reports", metadata,
     Column("report_id", Text, primary_key=True), Column("payload_json", Text),
     Column("timestamp", Integer), Column("current_version", Integer),
-    Column("content_hash", Text), Column("origin", Text), Column("lineage_status", Text))
+    Column("content_hash", Text), Column("origin", Text), Column("lineage_status", Text), Column('task_id', Text))
 report_versions = Table("report_versions", metadata,
     Column("report_id", Text, primary_key=True), Column("version", Integer, primary_key=True),
     Column("payload_json", Text), Column("content_hash", Text))

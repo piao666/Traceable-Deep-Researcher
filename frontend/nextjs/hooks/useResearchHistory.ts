@@ -10,147 +10,31 @@ export const useResearchHistory = () => {
   
   // Fetch all research history on mount
   useEffect(() => {
-    // Skip if data is already loaded to prevent excessive API calls
-    if (dataLoadedRef.current) {
-      return;
-    }
-
-    const fetchHistory = async () => {
+    const controller=new AbortController();
+    const load=async () => {
+      let local:ResearchHistoryItem[]=[];
+      try { const value=JSON.parse(localStorage.getItem('researchHistory') || '[]');if(Array.isArray(value))local=value; } catch { /* Use server history. */ }
       try {
-        console.log('Fetching research history from server...');
-        // First, load data from localStorage for immediate display
-        const localHistory = loadFromLocalStorage();
-        
-        // Set local history immediately to show something to user
-        if (localHistory && localHistory.length > 0) {
-          setHistory(localHistory);
-        }
-        
-        // Then try to fetch from server, but only for items we have locally
-        if (localHistory && localHistory.length > 0) {
-          // Extract IDs from local history to filter server results
-          const localIds = localHistory.map((item: ResearchHistoryItem) => item.id).join(',');
-          console.log(`Sending ${localHistory.length} local IDs to server for filtering`);
-          
-          const response = await fetch(`/api/reports?report_ids=${localIds}`);
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Check if the response has the expected structure
-            if (data.reports && Array.isArray(data.reports)) {
-              console.log('Loaded research history from server:', data.reports.length, 'items');
-              
-              // Merge local and server history
-              await syncLocalHistoryWithServer(localHistory, data.reports);
-            } else {
-              console.warn('Server response did not contain reports array', data);
-              // Keep using the local history we already loaded
-            }
-          } else {
-            console.warn('Failed to load history from server, status:', response.status);
-            // We're already using local history from above
-          }
-        } else {
-          console.log('No local history found, skipping server fetch');
-        }
-      } catch (error) {
-        console.error('Error fetching research history:', error);
-        // We're already using local history from above
+        const response=await fetch('/api/reports?limit=50&offset=0',{cache:'no-store',signal:controller.signal});
+        if(!response.ok)throw new Error('History unavailable');
+        const data=await response.json();
+        if(!Array.isArray(data.reports))throw new Error('Invalid history response');
+        if(controller.signal.aborted)return;
+        setHistory(data.reports);
+        // Preserve local-only legacy records for the explicit import action.
+        const merged=new Map(local.map(item=>[item.id,item]));
+        for(const item of data.reports)merged.set(item.id,item);
+        try { localStorage.setItem('researchHistory',JSON.stringify(Array.from(merged.values()))); } catch { /* Server remains authoritative. */ }
+      } catch {
+        if(!controller.signal.aborted)setHistory(local.slice(0,50));
       } finally {
-        dataLoadedRef.current = true; // Mark data as loaded
-        setLoading(false);
+        if(!controller.signal.aborted){dataLoadedRef.current=true;setLoading(false);}
       }
     };
-    
-    // Helper to load from localStorage
-    const loadFromLocalStorage = () => {
-      const localHistoryStr = localStorage.getItem('researchHistory');
-      if (localHistoryStr) {
-        try {
-          const parsedHistory = JSON.parse(localHistoryStr);
-          if (Array.isArray(parsedHistory)) {
-            console.log('Loaded research history from localStorage:', parsedHistory.length, 'items');
-            return parsedHistory;
-          } else {
-            console.warn('localStorage history is not an array');
-            return [];
-          }
-        } catch (error) {
-          console.error('Error parsing localStorage history:', error);
-          return [];
-        }
-      } else {
-        return [];
-      }
-    };
-    
-    // Helper to sync local history with server
-    const syncLocalHistoryWithServer = async (localHistory: ResearchHistoryItem[], serverHistory: ResearchHistoryItem[]) => {
-      console.log('Syncing local history with server...');
-      
-      // Create a map of server history IDs for quick lookup
-      const serverIds = new Set(serverHistory.map(item => item.id));
-      
-      // Find local reports that aren't on the server
-      const localOnlyReports = localHistory.filter(item => !serverIds.has(item.id));
-      console.log('Found local-only reports:', localOnlyReports.length);
-      
-      // Upload local-only reports to server
-      for (const report of localOnlyReports) {
-        try {
-          // Skip reports without questions or answers
-          if (!report.question || !report.answer) continue;
-          
-          console.log(`Uploading local report to server: ${report.id}`);
-          
-          const response = await fetch('/api/reports', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: report.id,
-              question: report.question,
-              answer: report.answer,
-              orderedData: report.orderedData || [],
-              chatMessages: report.chatMessages || []
-            }),
-          });
-          
-          if (!response.ok) {
-            console.warn(`Failed to upload local report ${report.id} to server:`, response.status);
-          }
-        } catch (error) {
-          console.error(`Error uploading local report ${report.id} to server:`, error);
-        }
-      }
-      
-      // Create a unified history with server data prioritized
-      const combinedHistory = [...serverHistory];
-      
-      // Add local-only reports to the combined history
-      for (const report of localOnlyReports) {
-        if (!serverIds.has(report.id)) {
-          combinedHistory.push(report);
-        }
-      }
-      
-      // Sort by timestamp if available, newest first
-      const sortedHistory = combinedHistory.sort((a, b) => {
-        const timeA = a.timestamp || 0;
-        const timeB = b.timestamp || 0;
-        return timeB - timeA;
-      });
-      
-      setHistory(sortedHistory);
-      
-      // Update localStorage with the complete merged set
-      localStorage.setItem('researchHistory', JSON.stringify(sortedHistory));
-      
-      console.log('History sync complete, total items:', sortedHistory.length);
-    };
-    
-    fetchHistory();
+    void load();
+    const refresh=()=>{void load();};
+    window.addEventListener('tdr:history-changed',refresh);
+    return ()=>{controller.abort();window.removeEventListener('tdr:history-changed',refresh);};
   }, []); // Empty dependency array - only run once on mount
   
   // Save new research
@@ -500,4 +384,4 @@ export const useResearchHistory = () => {
     getChatMessages,
     clearHistory
   };
-}; 
+};

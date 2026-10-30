@@ -36,6 +36,12 @@ from chat.chat import ChatAgentWithMemory
 
 from server.report_store import ReportStore
 from server.tasks.repository import ReportVersionConflict
+from server.tasks.service import TaskService
+from server.tasks.routes import router as task_router
+from server.tasks.runner import run_research
+from server.tasks.worker import TaskWorker
+from server.settings import ServerSettings
+from server.exports.worker import ExportWorker, render_document
 
 # Report/history persistence is owned by the SQLite repository.
 
@@ -57,8 +63,8 @@ class ResearchRequest(BaseModel):
     report_source: str
     tone: str
     headers: dict | None = None
-    repo_name: str
-    branch_name: str
+    repo_name: str = ''
+    branch_name: str = ''
     generate_in_background: bool = True
 
 
@@ -73,6 +79,16 @@ class ChatRequest(BaseModel):
 async def lifespan(app: FastAPI):
     # Startup
     await report_store.initialize()
+    settings = ServerSettings.from_env()
+    task_service = TaskService(report_store.database)
+    app.state.task_service = task_service
+    manager.task_service = task_service
+    worker = TaskWorker(task_service, getattr(app.state, 'research_runner', run_research),
+        lease_seconds=settings.worker_lease_seconds, poll_seconds=settings.worker_poll_seconds,
+        shutdown_seconds=settings.worker_shutdown_seconds)
+    app.state.task_worker = worker
+    export_worker=ExportWorker(report_store.database,getattr(app.state,'export_renderer',render_document))
+    app.state.export_worker=export_worker
     os.makedirs("outputs", exist_ok=True)
     app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
     
@@ -91,14 +107,22 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Frontend directory not found: {frontend_path}")
     
     logger.info("Traceable Deep Researcher API ready - SQLite report storage")
+    worker.start()
+    export_worker.start()
     try:
         yield
     finally:
-        await report_store.close()
+        try:
+            await worker.stop()
+        finally:
+            await export_worker.stop()
+            manager.task_service = None
+            await report_store.close()
         logger.info("Research API shutting down")
 
 # App initialization
 app = FastAPI(title="Traceable Deep Researcher", lifespan=lifespan)
+app.include_router(task_router)
 
 # Configure allowed origins for CORS
 allowed_origins_env = os.getenv("CORS_ALLOW_ORIGINS")
@@ -178,7 +202,15 @@ async def agent_discovery(request: Request):
 async def read_report(request: Request, research_id: str):
     docx_path = os.path.join('outputs', f"{research_id}.docx")
     if not os.path.exists(docx_path):
-        return {"message": "Report not found."}
+        try:
+            task=await request.app.state.task_service.call('get',research_id)
+        except KeyError:
+            return {"message": "Report not found."}
+        job=next((job for job in task['exports'] if job['format']=='docx' and job['status']=='succeeded'),None)
+        if job:
+            from server.tasks.routes import download
+            return await download(research_id,'docx',request,job['job_id'])
+        return JSONResponse(status_code=202,content={'research_id':research_id,'status':task['status'],'message':'报告文件尚未生成。'})
     return FileResponse(docx_path)
 
 
@@ -225,6 +257,8 @@ async def create_or_update_report(request: Request):
 
         await report_store.upsert_report(research_id, report)
         return {"success": True, "id": research_id}
+    except ReportVersionConflict as e:
+        raise HTTPException(status_code=409,detail=str(e)) from e
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
@@ -239,6 +273,8 @@ async def update_report(research_id: str, request: Request):
         if not isinstance(data, dict):
             raise ValueError("Report patch must be a JSON object")
         updated = await report_store.patch_report(research_id, data, timestamp=int(time.time() * 1000))
+    except ReportVersionConflict as e:
+        raise HTTPException(status_code=409,detail=str(e)) from e
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     if not updated:
@@ -329,54 +365,34 @@ async def research_report_chat(research_id: str, request: Request):
 
 
 async def write_report(research_request: ResearchRequest, research_id: str = None):
-    report_information = await run_agent(
-        task=research_request.task,
-        report_type=research_request.report_type,
-        report_source=research_request.report_source,
-        source_urls=[],
-        document_urls=[],
-        tone=Tone[research_request.tone],
-        websocket=None,
-        stream_output=None,
-        headers=research_request.headers,
-        query_domains=[],
-        config_path="",
-        return_researcher=True
-    )
+    """Compatibility helper; execution is owned by the persistent task service."""
+    task=await app.state.task_service.legacy_submit(research_request.model_dump(),key=research_id)
+    task=await app.state.task_service.wait(task['research_id'],timeout=ServerSettings.from_env().http_wait_seconds)
+    return legacy_task_response(task)
 
-    docx_path = await write_md_to_word(report_information[0], research_id)
-    pdf_path = await write_md_to_pdf(report_information[0], research_id)
-    if research_request.report_type != "multi_agents":
-        report, researcher = report_information
-        response = {
-            "research_id": research_id,
-            "research_information": {
-                "source_urls": researcher.get_source_urls(),
-                "research_costs": researcher.get_costs(),
-                "visited_urls": list(researcher.visited_urls),
-                "research_images": researcher.get_research_images(),
-                # "research_sources": researcher.get_research_sources(),  # Raw content of sources may be very large
-            },
-            "report": report,
-            "docx_path": docx_path,
-            "pdf_path": pdf_path
-        }
-    else:
-        response = { "research_id": research_id, "report": "", "docx_path": docx_path, "pdf_path": pdf_path }
 
-    return response
+def legacy_task_response(task):
+    if task['status']=='succeeded':
+        result=task['result']
+        paths={job['format']:job['path'] for job in task['exports'] if job['status']=='succeeded'}
+        return {'research_id':task['research_id'],'report':result['report_markdown'],'status':task['status'],
+            'research_information':{'source_urls':[s.get('url') for s in result.get('sources',[])],
+                'research_costs':result.get('cost_summary',{}),'visited_urls':[],'research_images':[]},
+            'docx_path':paths.get('docx'),'pdf_path':paths.get('pdf'),'exports':task['exports']}
+    return JSONResponse(status_code=202,content={'research_id':task['research_id'],'status':task['status'],
+        'status_url':'/api/research/'+task['research_id'],'message':'研究已提交，可通过任务接口查询状态。'})
+
 
 @app.post("/report/")
 async def generate_report(research_request: ResearchRequest, background_tasks: BackgroundTasks):
-    research_id = sanitize_filename(f"task_{int(time.time())}_{research_request.task}")
-
-    if research_request.generate_in_background:
-        background_tasks.add_task(write_report, research_request=research_request, research_id=research_id)
-        return {"message": "Your report is being generated in the background. Please check back later.",
-                "research_id": research_id}
-    else:
-        response = await write_report(research_request, research_id)
-        return response
+    try:
+        task = await app.state.task_service.legacy_submit(research_request.model_dump())
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    if not research_request.generate_in_background:
+        task = await app.state.task_service.wait(task['research_id'],
+            timeout=ServerSettings.from_env().http_wait_seconds)
+    return legacy_task_response(task)
 
 
 @app.get("/files/")

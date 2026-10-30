@@ -15,6 +15,8 @@ from traceable_deep_researcher.utils.enum import ReportType, Tone
 from traceable_deep_researcher.actions import stream_output  # Import stream_output
 from .multi_agent_runner import run_multi_agent_task
 from .server_utils import CustomLogsHandler
+from traceable_deep_researcher.runtime.contracts import ResearchResult
+from .tasks.result_adapter import normalize_result
 
 logger = logging.getLogger(__name__)
 
@@ -64,39 +66,21 @@ class WebSocketManager:
                 await self.disconnect(websocket)
 
     async def disconnect(self, websocket: WebSocket):
-        """Disconnect a websocket."""
+        """Release ownership before awaits, even if the ASGI scope is cancelled."""
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+        sender = self.sender_tasks.pop(websocket, None)
+        self.message_queues.pop(websocket, None)
+        if sender:
+            sender.cancel()
         try:
-            if websocket in self.active_connections:
-                self.active_connections.remove(websocket)
-                
-                # Cancel sender task if it exists
-                if websocket in self.sender_tasks:
-                    try:
-                        self.sender_tasks[websocket].cancel()
-                        await self.message_queues[websocket].put(None)
-                    except Exception as e:
-                        logger.error(f"Error canceling sender task: {e}")
-                    finally:
-                        # Always try to clean up regardless of errors
-                        if websocket in self.sender_tasks:
-                            del self.sender_tasks[websocket]
-                
-                # Clean up message queue
-                if websocket in self.message_queues:
-                    del self.message_queues[websocket]
-                
-                # Finally close the WebSocket
-                try:
-                    await websocket.close()
-                except Exception as e:
-                    logger.info(f"WebSocket already closed: {e}")
-        except Exception as e:
-            logger.error(f"Error during WebSocket disconnection: {e}")
-            # Still try to close the connection if possible
+            if sender:
+                await asyncio.gather(sender, return_exceptions=True)
+        finally:
             try:
                 await websocket.close()
-            except Exception:
-                pass  # If this fails too, there's nothing more we can do
+            except Exception as exc:
+                logger.info(f"WebSocket already closed: {exc}")
 
     async def start_streaming(self, task, report_type, report_source, source_urls, document_urls, tone, websocket, headers=None, query_domains=[], mcp_enabled=False, mcp_strategy="fast", mcp_configs=[], max_search_results=None):
         """Start streaming the output."""
@@ -113,7 +97,7 @@ class WebSocketManager:
         )
         return report
 
-async def run_agent(task, report_type, report_source, source_urls, document_urls, tone: Tone, websocket, stream_output=stream_output, headers=None, query_domains=[], config_path="", return_researcher=False, mcp_enabled=False, mcp_strategy="fast", mcp_configs=[], max_search_results=None):
+async def run_agent(task, report_type, report_source, source_urls, document_urls, tone: Tone, websocket, stream_output=stream_output, headers=None, query_domains=[], config_path="", return_researcher=False, mcp_enabled=False, mcp_strategy="fast", mcp_configs=[], max_search_results=None, return_result=False, run_context=None):
     """Run the agent."""    
     # Create logs handler for this research task
     logs_handler = CustomLogsHandler(websocket, task)
@@ -131,18 +115,21 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
         })
 
     # Initialize researcher based on report type
+    researcher = None
     if report_type == "multi_agents":
         report = await run_multi_agent_task(
             query=task, 
             websocket=logs_handler,  # Use logs_handler instead of raw websocket
             stream_output=stream_output, 
             tone=tone, 
-            headers=headers
+            headers=headers,
+            **({'task_overrides': {'include_human_feedback': False, 'publish_formats': {}}} if return_result else {})
         )
-        report = report.get("report", "")
+        report = report.get("report", "") if isinstance(report, dict) else report
 
     elif report_type == ReportType.DetailedReport.value:
         researcher = DetailedReport(
+            **({'run_context':run_context} if run_context else {}),
             query=task,
             query_domains=query_domains,
             report_type=report_type,
@@ -161,6 +148,7 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
         
     else:
         researcher = BasicReport(
+            **({'run_context':run_context} if run_context else {}),
             query=task,
             query_domains=query_domains,
             report_type=report_type,
@@ -177,6 +165,9 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
         )
         report = await researcher.run()
 
+    if return_result:
+        core = researcher.traceable_deep_researcher if researcher else None
+        return normalize_result(report, core)
     if report_type != "multi_agents" and return_researcher:
         return report, researcher.traceable_deep_researcher
     else:

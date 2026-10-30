@@ -322,238 +322,60 @@ export default function Home() {
   };
 
   const handleDisplayResult = async (newQuestion: string) => {
-    // Exit chat mode when starting a new research
-    setIsInChatMode(false);
-    setShowResult(true);
-    setLoading(true);
-    setQuestion(newQuestion);
-    setPromptValue("");
-    setAnswer("");
-    setCurrentResearchId(null); // Reset current research ID for new research
-    setOrderedData((prevOrder) => [...prevOrder, { type: 'question', content: newQuestion }]);
-
-    // For mobile, use a simplified approach without websockets
-    if (isMobile) {
+    if (loading) return;
+    let apiVariables: Record<string,string> = {};
+    try { apiVariables=JSON.parse(localStorage.getItem('apiVariables') || '{}'); } catch { /* Use server settings. */ }
+    const langgraphHostUrl=apiVariables.LANGGRAPH_HOST_URL;
+    if (chatBoxSettings.report_type === 'multi_agents' && langgraphHostUrl) {
+      setIsInChatMode(false);setShowResult(true);setLoading(true);setQuestion(newQuestion);setAnswer('');setOrderedData([]);
+      toast('当前使用外部研究服务，恢复能力由该服务提供。');
       try {
-        // Create a new unique ID for this research
-        const newResearchId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-        
-        // First save the initial question to history - with proper parameters
-        const initialOrderedData: Data[] = [{ type: 'question', content: newQuestion } as QuestionData];
-        await saveResearch(
-          newQuestion,  // question
-          '',           // empty answer initially
-          initialOrderedData  // ordered data
-        );
-        
-        // Make direct API call to get response
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: newQuestion }],
-            // No report since this is a new research
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+        const {streamResponse,host,thread_id}=await startLanggraphResearch(newQuestion,chatBoxSettings.report_source,langgraphHostUrl);
+        const link=`https://smith.langchain.com/studio/thread/${thread_id}?baseUrl=${host}`;
+        setOrderedData([{type:'langgraphButton',link}]);
+        let previousChunk=null;
+        for await (const chunk of streamResponse) {
+          if (chunk.data.report && chunk.data.report !== '完整研究报告内容') {
+            setAnswer(chunk.data.report);
+            setOrderedData(previous=>[...previous,{...chunk.data,output:chunk.data.report,type:'report'}]);
+          } else if (previousChunk) {
+            const differences=findDifferences(previousChunk,chunk);
+            setOrderedData(previous=>[...previous,{type:'differences',content:'differences',output:JSON.stringify(differences)}]);
+          }
+          previousChunk=chunk;
         }
-        
-        const data = await response.json();
-        
-        if (data.response && data.response.content) {
-          // Add the AI response to the ordered data
-          const chatData: ChatData = { 
-            type: 'chat', 
-            content: data.response.content,
-            metadata: data.response.metadata 
-          };
-          
-          // Set the answer
-          const chatAnswer = data.response.content;
-          setAnswer(chatAnswer);
-          setOrderedData(prevOrder => [...prevOrder, chatData]);
-          
-          // Update the research with the answer
-          const updatedOrderedData: Data[] = [
-            { type: 'question', content: newQuestion } as QuestionData,
-            chatData
-          ];
-          
-          // Save the completed research with proper parameters
-          await updateResearch(
-            newResearchId,    // id
-            chatAnswer,       // answer
-            updatedOrderedData // ordered data
-          );
-          
-          // Set current research ID so we can continue the conversation
-          setCurrentResearchId(newResearchId);
-        } else {
-          // Handle error
-          setOrderedData(prevOrder => [...prevOrder, { 
-            type: 'chat', 
-            content: "暂时无法生成研究结果，请重试。"
-          } as ChatData]);
-        }
-      } catch (error) {
-        console.error('Error in mobile research:', error);
-        // Show error message
-        setOrderedData(prevOrder => [...prevOrder, { 
-          type: 'chat', 
-          content: "请求处理失败，请稍后重试。"
-        } as ChatData]);
-      } finally {
-        setLoading(false);
-      }
+      } catch { toast.error('外部研究服务请求失败，请重试。'); }
+      finally { setLoading(false); }
       return;
     }
-
-    const storedConfig = localStorage.getItem('apiVariables');
-    const apiVariables = storedConfig ? JSON.parse(storedConfig) : {};
-    const langgraphHostUrl = apiVariables.LANGGRAPH_HOST_URL;
-
-    // Starting new research - tracking for redirection once complete
-    const newResearchStarted = Date.now().toString();
-    // We'll use this as a temporary ID to keep track of this research
-    const tempResearchId = `temp-${newResearchStarted}`;
-
-    if (chatBoxSettings.report_type === 'multi_agents' && langgraphHostUrl) {
-      let { streamResponse, host, thread_id } = await startLanggraphResearch(newQuestion, chatBoxSettings.report_source, langgraphHostUrl);
-      const langsmithGuiLink = `https://smith.langchain.com/studio/thread/${thread_id}?baseUrl=${host}`;
-      setOrderedData((prevOrder) => [...prevOrder, { type: 'langgraphButton', link: langsmithGuiLink }]);
-
-      let previousChunk = null;
-      for await (const chunk of streamResponse) {
-        if (chunk.data.report != null && chunk.data.report != "完整研究报告内容") {
-          setOrderedData((prevOrder) => [...prevOrder, { ...chunk.data, output: chunk.data.report, type: 'report' }]);
-          setLoading(false);
-        
-          // Save research and navigate to its unique URL once it's complete
-          setAnswer(chunk.data.report);
-        } else if (previousChunk) {
-          const differences = findDifferences(previousChunk, chunk);
-          setOrderedData((prevOrder) => [...prevOrder, { type: 'differences', content: 'differences', output: JSON.stringify(differences) }]);
-        }
-        previousChunk = chunk;
+    setLoading(true);
+    try {
+      const domains=JSON.parse(localStorage.getItem('domainFilters') || '[]').map((item:{value:string})=>item.value);
+      const payload={task:newQuestion, report_type:chatBoxSettings.report_type,
+        report_source:chatBoxSettings.report_source,tone:chatBoxSettings.tone,query_domains:domains,
+        source_policy:{allowed_kinds:[chatBoxSettings.report_source]},
+        mcp_enabled:chatBoxSettings.mcp_enabled || false,mcp_strategy:chatBoxSettings.mcp_strategy || 'fast'};
+      const legacy=payload.mcp_enabled;
+      const body=legacy ? {...payload,mcp_configs:chatBoxSettings.mcp_configs || []} : payload;
+      const key=sessionStorage.getItem('tdr.pendingSubmission') || uuidv4();
+      sessionStorage.setItem('tdr.pendingSubmission',key);
+      const response=await fetch('/api/research'+(legacy ? '/legacy' : ''),{
+        method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify(body)});
+      const result=await response.json();
+      if(!response.ok) {
+        if(response.status===409 || response.status===422) sessionStorage.removeItem('tdr.pendingSubmission');
+        throw new Error(typeof result.detail==='string' ? result.detail : '研究提交失败，请重试。');
       }
-    } else {
-      initializeWebSocket(newQuestion, chatBoxSettings);
-    }
+      if(typeof result.research_id!=='string') throw new Error('研究服务未返回任务标识。');
+      sessionStorage.removeItem('tdr.pendingSubmission');
+      router.push('/tasks/'+encodeURIComponent(result.research_id));
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : '暂时无法连接研究服务，请重试。');
+    } finally { setLoading(false); }
   };
 
   // Mobile-specific implementation for research
-  const handleMobileDisplayResult = async (newQuestion: string) => {
-    // Update UI state
-    setIsInChatMode(false);
-    setShowResult(true);
-    setLoading(true);
-    setQuestion(newQuestion);
-    setPromptValue("");
-    setAnswer("");
-    setCurrentResearchId(null);
-    
-    // Start with just the question
-    setOrderedData([{ type: 'question', content: newQuestion } as QuestionData]);
-    
-    try {
-      // Generate unique ID for this research
-      const mobileResearchId = `mobile-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-      
-      // Save initial research with just the question
-      const initialOrderedData: Data[] = [{ type: 'question', content: newQuestion } as QuestionData];
-      
-      // Save to research history
-      await saveResearch(
-        newQuestion,  // question
-        '',           // empty answer initially
-        initialOrderedData  // ordered data
-      );
-      
-      // Make direct API call instead of using websockets
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: newQuestion }],
-          // Include the required parameters
-          report: '',  // No report since this is a new research
-          report_source: chatBoxSettings.report_source || 'web',
-          tone: chatBoxSettings.tone || 'Objective'
-        }),
-        // Set reasonable timeout
-        signal: AbortSignal.timeout(30000) // 30-second timeout
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.response && data.response.content) {
-        // Extract the response
-        const responseContent = data.response.content;
-        
-        // Update UI with the answer
-        setAnswer(responseContent);
-        
-        // Create chat data object
-        const chatData: ChatData = { 
-          type: 'chat', 
-          content: responseContent,
-          metadata: data.response.metadata 
-        };
-        
-        // Update ordered data to include the response
-        setOrderedData(prevData => [...prevData, chatData]);
-        
-        // Update the complete research
-        const updatedOrderedData: Data[] = [
-          { type: 'question', content: newQuestion } as QuestionData,
-          chatData
-        ];
-        
-        // Update research history with the answer
-        await updateResearch(
-          mobileResearchId,
-          responseContent,
-          updatedOrderedData
-        );
-        
-        // Set current research ID for future interactions
-        setCurrentResearchId(mobileResearchId);
-      } else {
-        // Handle error in response
-        setOrderedData(prevData => [
-          ...prevData, 
-          { 
-            type: 'chat', 
-            content: "暂时无法生成完整回答，请换一种方式提问。"
-          } as ChatData
-        ]);
-      }
-    } catch (error) {
-      console.error('Mobile research error:', error);
-      
-      // Show error in UI
-      setOrderedData(prevData => [
-        ...prevData, 
-        { 
-          type: 'chat', 
-          content: "请求处理失败，请稍后重试。"
-        } as ChatData
-      ]);
-    } finally {
-      // Always finish loading state
-      setLoading(false);
-    }
-  };
+  const handleMobileDisplayResult = async (newQuestion: string) => handleDisplayResult(newQuestion);
 
   // Mobile-specific chat handler
   const handleMobileChat = async (message: string) => {
@@ -697,6 +519,9 @@ export default function Home() {
    */
   const handleStopResearch = () => {
     if (socket) {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({type: 'cancel'}));
+      }
       socket.close();
     }
     setLoading(false);

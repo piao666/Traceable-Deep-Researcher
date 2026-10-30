@@ -5,6 +5,7 @@ from typing import List, Dict, Set, Optional, Any
 from fastapi import WebSocket
 
 from traceable_deep_researcher import TraceableDeepResearcher
+from traceable_deep_researcher.runtime.checkpoints import checkpoint_call, digest
 
 
 class DetailedReport:
@@ -25,6 +26,7 @@ class DetailedReport:
         mcp_configs=None,
         mcp_strategy=None,
         max_search_results=None,
+        run_context=None,
     ):
         self.query = query
         self.report_type = report_type
@@ -39,6 +41,7 @@ class DetailedReport:
         self.headers = headers or {}
         self.complement_source_urls = complement_source_urls
         self.max_search_results = max_search_results
+        self.run_context = run_context
         
         # Generate a unique research ID for this report
         self.research_id = self._generate_research_id(query)
@@ -57,6 +60,8 @@ class DetailedReport:
             "headers": self.headers,
             "complement_source_urls": self.complement_source_urls,
         }
+        if run_context is not None:
+            traceable_deep_researcher_params['run_context']=run_context
 
         # Add MCP parameters if provided
         if mcp_configs is not None:
@@ -82,9 +87,13 @@ class DetailedReport:
         return f"detailed_{timestamp}_{query_hash}"
 
     async def run(self) -> str:
+        return await checkpoint_call(self,'report_written',{},self._run)
+
+    async def _run(self) -> str:
         await self._initial_research()
-        subtopics = await self._get_all_subtopics()
-        report_introduction = await self.traceable_deep_researcher.write_introduction()
+        subtopics = await checkpoint_call(self,'plan_ready',{},self._get_all_subtopics)
+        report_introduction = await checkpoint_call(self,'introduction_written',{},
+            self.traceable_deep_researcher.write_introduction)
         _, report_body = await self._generate_subtopic_reports(subtopics)
         self.traceable_deep_researcher.visited_urls.update(self.global_urls)
         report = await self._construct_detailed_report(report_introduction, report_body)
@@ -111,8 +120,11 @@ class DetailedReport:
         subtopic_reports = []
         subtopics_report_body = ""
 
-        for subtopic in subtopics:
-            result = await self._get_subtopic_report(subtopic)
+        for index, subtopic in enumerate(subtopics):
+            self._section_scope=f'section-{index}'
+            async def section():
+                return await self._get_subtopic_report(subtopic)
+            result = await checkpoint_call(self,f'section:{index}:{digest(subtopic)}',subtopic,section)
             if result["report"]:
                 subtopic_reports.append(result)
                 subtopics_report_body += f"\n\n\n{result['report']}"
@@ -138,6 +150,8 @@ class DetailedReport:
     async def _get_subtopic_report(self, subtopic: Dict) -> Dict[str, str]:
         current_subtopic_task = subtopic.get("task")
         subtopic_assistant = TraceableDeepResearcher(
+            **({'run_context':self.run_context.child(scope=self._section_scope+':'+digest(subtopic))}
+               if self.run_context else {}),
             query=current_subtopic_task,
             query_domains=self.query_domains,
             report_type="subtopic_report",

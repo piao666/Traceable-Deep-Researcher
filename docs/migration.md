@@ -23,9 +23,9 @@ their real environment secrets, runtime reports or the reference evidence engine
 
 ## A1 report history migration — 2026-10-26
 
-The API now stores report history and chat in SQLite. This is report persistence,
-not research-task persistence: research/WS execution and frontend-triggered history
-saving are unchanged. Old JSON stays untouched and is never dual-written.
+The API stores report history and chat in SQLite. Since M1/A2–A7, tasks,
+checkpoints, events and export jobs are also persisted (schema v4); history is
+written by the server. Old JSON stays untouched and is never dual-written.
 
 The CLI defaults to **dry-run**: it validates the entire JSON and checks IDs,
 timestamps, chats, duplicate JSON keys and conflicts. It does not create a DB,
@@ -113,3 +113,44 @@ retain the entire SQLite backup and explicitly export/reconcile current reports
 and chats into an old-format JSON snapshot first. This batch provides no automatic
 SQLite-to-JSON downgrade command. Rollback before any new SQLite writes may use the
 verified original JSON backup; after new writes the original backup is stale.
+
+## Schema v1 → v4 task upgrade — 2026-10-30
+
+Read the implementation and acceptance records before changing deployment data.
+Stop all writers, retain the old application image, and back up outputs/documents.
+The migration validates known schema checksums before alteration. For a valid
+older SQLite schema, `--init-only` automatically creates a consistent backup
+using SQLite's backup API, including committed WAL contents, before the DDL
+transaction. Unknown versions/checksums are refused. A failed DDL transaction
+rolls back; keep the backup even after a successful upgrade.
+
+```sh
+docker compose stop web research
+docker compose build research
+# Existing database, no legacy JSON to import:
+docker compose run --rm --no-deps research python scripts/migrate_report_store.py --init-only
+docker compose up -d research
+docker compose --profile web up -d web
+```
+
+If the legacy JSON exists, use the dry-run/apply flow above instead. Do not
+replace the database or remove JSON to bypass validation. The upgrade prints
+`database_backup` when it creates one. `--backup-only` can take a consistent
+backup without schema changes. Restore a backup to an isolated directory and
+check its version/counts before use. For rollback to schema v1, stop all writers
+and restore the verified pre-upgrade database **with the matching old image**;
+first preserve the new database and files, because v1 cannot retain new tasks.
+Never run the v1 image against the upgraded v4 database.
+
+Local deployment inspection on 2026-10-30 found schema v1, 0 reports, 0 chats,
+and no `reports.json`. There was consequently no legacy JSON to import; a
+schema upgrade still requires the consistent backup and count checks above.
+After the initial automatic-approval rejection, the user explicitly authorized
+service interruption and actual DB migration. The local cutover is now applied:
+schema v4, integrity ok, reports/chats still 0, no legacy JSON import required.
+The consistent pre-upgrade backup is
+`data/backups/tdr-6ffcef5fecad400082d760983405d814.sqlite3`;
+restoring it into an independent in-memory database confirms schema v1, integrity
+ok and matching counts. New frontend/backend containers are running on ports
+3000/8000; GET-only application/proxy checks pass. Old image tags
+`:pre-m1-20261030` remain available for a controlled rollback with that backup.

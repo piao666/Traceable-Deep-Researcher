@@ -8,7 +8,9 @@
 
 **技术栈**：现有 Python/FastAPI、SQLAlchemy、LangGraph、Next.js/TypeScript、pytest；建议新增 SQLite 任务存储及前端测试工具，依赖版本在实施时锁定。
 
-创建日期：2026-10-23；补全日期：2026-10-24；清单更新：2026-10-29。状态：M0 已验收；M1/A1 的代码、离线和 Linux 容器验收已完成；A2–A7 及 M2–M4 待实施。
+创建日期：2026-10-23；补全日期：2026-10-24；清单更新：2026-10-30。状态：M0 已验收；M1/A1–A7 的代码、离线、Linux 容器、浏览器验收及本地部署切换已完成；M2–M4 待实施。当前恢复粒度及部署记录见下文。
+
+阶段更新（2026-10-30）：已依次完成 [批次 03 / A2–A3](m1-a2-a3-implementation-plan.zh-CN.md)、[批次 04 / A4–A5](m1-a4-a5-implementation-plan.zh-CN.md)、[批次 05 / A6–A7](m1-a6-a7-implementation-plan.zh-CN.md)：持久任务、单机 worker/租约、阶段检查点、有序事件与刷新恢复、独立导出、服务端历史。230 项离线回归、42 项 Linux 阶段/连接测试、8 项任务容器检查、前端生产构建和桌面/手机浏览器核验通过。旧历史现状为 JSON 不存在、报告/聊天各 0；没有虚构数据导入。多代理图节点与人工审核恢复仍属 B3，外部 LangGraph 不纳入本地恢复。完整验收与本地切换结果见 [validation](validation.md)。
 
 阶段更新（2026-10-29）：批次 02 / A1 已按[详细实施清单](m1-a1-implementation-plan.zh-CN.md)接入 SQLite 报告存储、显式 schema 检查和旧历史迁移工具，并补齐 13 项隔离 Linux 容器检查。Docker/WSL2 环境已可用；真实数据未迁移，任务队列、worker 和研究恢复仍未实现。
 
@@ -135,9 +137,9 @@
 - [x] 迁移脚本先 dry-run 校验旧 JSON，输出记录数、异常 ID 和冲突；真正导入前备份旧文件并记录 SHA-256。
 - [x] 旧报告保留 ID、聊天和时间；没有研究过程的历史标记 `legacy_import`、lineage unavailable，不伪造 task events 或证据。
 - [x] 导入以源文件 hash 和旧 ID 幂等，事务失败整体回滚。损坏 JSON 停止迁移并报错，不能空库覆盖。
-- [x] 提供维护停写、增量导入和切换操作说明；代码不双写 JSON/SQLite。真实部署切换未执行。
+- [x] 提供维护停写、增量导入和切换操作说明；代码不双写 JSON/SQLite。部署检查与切换记录见 validation.md。
 
-A1 范围说明：`001_tasks.sql` 本批建立报告/版本/聊天/schema 和导入凭据表；任务、事件和租约表在 A2/A3 随实现新增迁移。代码、离线及 2026-10-29 的 Linux 容器验收记录见详细实施清单。A1 已验收，真实部署的数据切换仍须按维护步骤执行。
+A1 范围说明：`001_tasks.sql` 建立报告/版本/聊天/schema 和导入凭据表；002–004 随后增加任务/事件/租约、检查点与导出。显式升级会先用 SQLite backup API 创建一致性备份。真实历史没有 JSON 可导入，不把这一现状记为旧数据迁移成功。
 
 **验收**：新增 `tests/backend/test_report_store_migration.py`、`tests/backend/test_report_repository.py`，覆盖重复迁移、损坏文件、中文内容、相同 ID 冲突、并发更新和事务回滚；现有报告聊天路由测试继续通过。
 
@@ -147,12 +149,12 @@ A1 范围说明：`001_tasks.sql` 本批建立报告/版本/聊天/schema 和导
 
 **修改步骤**：
 
-- [ ] 定义 POST `/api/research`，验证请求后返回 HTTP 202 和服务端生成的 research_id；保存配置快照摘要和显式的 report_type/source。
-- [ ] 同一部署调用范围内，`Idempotency-Key + request_hash` 防重复：相同 key/内容返回原任务；相同 key/不同内容返回 409。若将来支持多用户，该唯一键必须带 owner scope。
-- [ ] GET `/api/research/{id}` 返回执行/审核/导出状态、最近 seq 和可用报告；GET 列表使用分页和状态过滤。
-- [ ] POST `/{id}/cancel` 发出取消请求；POST `/{id}/resume` 只允许 interrupted 或可重试失败，不允许重入正在运行的任务。
-- [ ] 普通、详细、deep、多代理均适配为 ResearchResult。修正 HTTP 对多代理返回值按字符串下标处理的问题。
-- [ ] 原 `/report/` 的后台模式委托 TaskService，前台模式等待同一任务的报告结果；等待超时返回任务引用，不能取消实际任务。旧返回字段通过适配器保留一个过渡版本。
+- [x] 定义 POST `/api/research`，验证请求后返回 HTTP 202 和服务端生成的 research_id；保存配置快照摘要和显式的 report_type/source。
+- [x] 同一部署调用范围内，`Idempotency-Key + request_hash` 防重复：相同 key/内容返回原任务；相同 key/不同内容返回 409。若将来支持多用户，该唯一键必须带 owner scope。
+- [x] GET `/api/research/{id}` 返回执行/审核/导出状态、最近 seq 和可用报告；GET 列表使用分页和状态过滤。
+- [x] POST `/{id}/cancel` 发出取消请求；POST `/{id}/resume` 只允许 interrupted 或可重试失败，不允许重入正在运行的任务。
+- [x] 普通、详细、deep、多代理均适配为 ResearchResult。修正 HTTP 对多代理返回值按字符串下标处理的问题。
+- [x] 原 `/report/` 的后台模式委托 TaskService，前台模式等待同一任务的报告结果；等待超时返回任务引用，不能取消实际任务。旧返回字段通过适配器保留一个过渡版本。
 
 **验收**：新增 `tests/backend/test_task_api.py`、`tests/backend/test_research_result_adapters.py`；覆盖重复提交、类型非法、取消与完成竞争、四种报告类型和旧 HTTP 返回兼容。
 
@@ -162,12 +164,12 @@ A1 范围说明：`001_tasks.sql` 本批建立报告/版本/聊天/schema 和导
 
 **修改步骤**：
 
-- [ ] 第一版在单个 API 服务实例的 lifespan 内启动 worker，默认部署一个 API 进程；持久队列为数据库任务表。后续可复用 runner 分离 worker 进程，无需首版引入 Redis/Celery。
-- [ ] 使用事务 compare-and-set 领取 queued 任务；写入 lease、attempt_id 和递增 fencing_token。每次 checkpoint、状态和产物提交都校验 token，拒绝过期 worker 覆盖新尝试。
-- [ ] 运行中定期续租；进程退出前停止领取新任务，在有限宽限时间内保存检查点。租约过期只使任务具备重新领取条件，不能直接把它视为业务成功。
-- [ ] 任务重启从最后有效阶段恢复；没有可恢复检查点时置 interrupted，说明需要重新执行哪一段。
-- [ ] 断开 WS 只释放订阅队列和 sender，不取消研究。用户显式取消才传播 cancellation token 并关闭 MCP/抓取客户端。
-- [ ] 暂存凭据放在内存或部署端 secret resolver，数据库只保存脱敏配置与凭据引用；重启后无法恢复临时凭据的任务进入 interrupted/requires_credentials。
+- [x] 第一版在单个 API 服务实例的 lifespan 内启动 worker，默认部署一个 API 进程；持久队列为数据库任务表。后续可复用 runner 分离 worker 进程，无需首版引入 Redis/Celery。
+- [x] 使用事务 compare-and-set 领取 queued 任务；写入 lease、attempt_id 和递增 fencing_token。每次 checkpoint、状态和产物提交都校验 token，拒绝过期 worker 覆盖新尝试。
+- [x] 运行中定期续租；进程退出前停止领取新任务，在有限宽限时间内保存检查点。租约过期只使任务具备重新领取条件，不能直接把它视为业务成功。
+- [x] 进程丢失/租约过期置 interrupted，显式 resume 后复用兼容的已完成阶段；未完成阶段可能重跑。临时凭据丢失时拒绝恢复并要求新提交。
+- [x] 断开 WS 只释放订阅队列和 sender，不取消研究。用户显式取消才传播 cancellation token 并关闭 MCP/抓取客户端。
+- [x] 暂存凭据放在内存或部署端 secret resolver，数据库只保存脱敏配置与凭据引用；重启后无法恢复临时凭据的任务进入 interrupted/requires_credentials。
 
 **验收**：新增 `tests/backend/test_task_worker.py`、`tests/backend/test_task_leases.py`；模拟进程丢失、租约竞争、旧 worker 延迟写入、取消传播。扩展 `tests/backend/test_websocket_disconnect_cleanup.py`，同时验证连接资源释放与后台任务继续；保留原清理断言。
 
@@ -177,14 +179,14 @@ A1 范围说明：`001_tasks.sql` 本批建立报告/版本/聊天/schema 和导
 
 **修改步骤**：
 
-- [ ] 第一批检查点为 `plan_ready`、`research_complete`、`report_written`。持久化查询计划、来源/上下文引用、visited_urls、成本和版本，不 pickle 整个研究器对象。
-- [ ] detailed 增加 section_id 检查点；deep 使用父子 query_id 与深度路径，恢复已完成子查询，避免仅以问题字符串作为唯一身份。
-- [ ] 检查点携带输入/配置/prompt hash、schema_version；版本不兼容时拒绝静默复用并说明重跑范围。
-- [ ] 流式正文绑定 attempt_id 和 draft_version。中途写作失败重写时先发 `report.draft_reset`，避免前端把两次尝试拼接为一篇。
-- [ ] 以“至少执行一次、结果幂等提交”为语义；远程 LLM/工具调用在崩溃边界可能重复计费，不能承诺远程 exactly-once。保存 invocation_id 与 unknown outcome。
-- [ ] 多代理检查点分两步：先保证整次执行的持久状态；B3 接入审核恢复；再覆盖章节结果。未覆盖节点明确展示恢复粒度，不能把重新启动整条图称为节点恢复。
+- [x] 第一批检查点为 `plan_ready`、`research_complete`、`report_written`。持久化查询计划、来源/上下文引用、visited_urls、成本和版本，不 pickle 整个研究器对象。
+- [x] detailed 增加 section_id 检查点；deep 使用父子 query_id 与深度路径，恢复已完成子查询，避免仅以问题字符串作为唯一身份。
+- [x] 检查点携带输入/配置/prompt hash、schema_version；版本不兼容时拒绝静默复用并说明重跑范围。
+- [x] 流式正文绑定 attempt_id 和单调 seq。新尝试先发 `report.draft_reset`，避免前端把两次尝试拼接为一篇。
+- [x] 以“至少执行一次、结果幂等提交”为语义；远程 LLM/工具调用在崩溃边界可能重复计费，不能承诺远程 exactly-once。保存 invocation_id 与 unknown outcome。
+- [x] 多代理检查点分两步：先保证整次执行的持久状态；B3 接入审核恢复；再覆盖章节结果。未覆盖节点明确展示恢复粒度，不能把重新启动整条图称为节点恢复。
 
-**验收**：新增 `tests/runtime/test_checkpoint_resume.py`、`tests/runtime/test_draft_attempt_reset.py`；对各阶段注入故障，断言已提交的正文/章节不重复，未知远程调用不会被记为零成本。
+**验收**：实际使用 `tests/runtime/test_checkpoint_resume.py`、`tests/integration/test_research_stage_resume.py`、`tests/backend/test_task_leases.py` 和前端事件投影脚本；对各阶段注入故障，验证已完成阶段复用、输入/配置/checksum 不兼容、旧 token 拒绝和 attempt 草稿重置。未结束 invocation 的结果保持未知，不承诺不重复计费。
 
 ### A5. 持久事件回放与连接恢复
 
@@ -192,14 +194,14 @@ A1 范围说明：`001_tasks.sql` 本批建立报告/版本/聊天/schema 和导
 
 **修改步骤**：
 
-- [ ] 新 WS 命令使用 JSON envelope：`{version:1,type:'subscribe',research_id,after_seq}`；保留单一 receive loop。旧 `start ...` 映射为创建任务再订阅。
-- [ ] 服务端事件包含 `version/research_id/attempt_id/seq/type/created_at/payload`；统一 `task.started`、`stage.completed`、`review.requested`、`report.delta`、`report.ready`、`task.failed`、`export.*`。
-- [ ] 订阅开始时以数据库高水位回放；实时通知只作为“有新事件”的唤醒信号，实际按 seq 补读。避免先回放再注册订阅产生丢事件窗口。
-- [ ] 客户端记录 last_seq，重连只订阅，不重新提交研究；按 `(research_id,seq)` 去重，忽略旧 attempt 的已作废正文。
-- [ ] 事件保留期结束返回 `resync_required` 和报告/状态快照；客户端先恢复快照再继续订阅。分页重放和有界发送队列防止慢连接拖垮 worker。
-- [ ] token delta 可批量持久化，阶段/终态必须可靠落库；最终全文与 hash 是正文权威结果。UI 从终态结束 loading，不再依赖 path。
+- [x] 新 WS 命令使用 JSON envelope：`{version:1,type:'subscribe',research_id,after_seq}`；保留单一 receive loop。旧 `start ...` 映射为创建任务再订阅。
+- [x] 服务端事件包含 `version/research_id/attempt_id/seq/type/created_at/payload`；统一 `task.started`、`stage.completed/restored`、`report.delta`、`report.ready`、`task.failed`、`export.*`。审核事件在 B3 接入。
+- [x] 订阅始终按数据库 seq 补读，没有依赖易失通知的丢事件窗口。浏览器用 HTTP 轮询，WS v1 也使用同一事件存储。
+- [x] 客户端记录 last_seq，重连只订阅，不重新提交研究；按 `(research_id,seq)` 去重，忽略旧 attempt 的已作废正文。
+- [x] 事件保留期结束返回 `resync_required` 和报告/状态快照；客户端先恢复快照再继续订阅。分页重放和有界发送队列防止慢连接拖垮 worker。
+- [x] token delta 可批量持久化，阶段/终态必须可靠落库；最终全文与 hash 是正文权威结果。UI 从终态结束 loading，不再依赖 path。
 
-**验收**：新增 `tests/backend/test_task_event_replay.py`、前端 `frontend/nextjs/hooks/__tests__/useResearchTask.test.tsx`；覆盖重连边界、重复/乱序事件、过期 seq、慢客户端和失败终态。
+**验收**：实际使用 `tests/backend/test_task_websocket.py`、`test_task_leases.py`、`tests/integration/test_persistent_websocket.py`、`frontend/nextjs/tests/task-events.cjs` 与隔离浏览器；覆盖断线、重复/乱序、新尝试、游标过期、失败终态与真实页面刷新。hook 组件套件尚未引入，不虚构通过记录。
 
 ### A6. 正文持久化与导出解耦
 
@@ -207,11 +209,11 @@ A1 范围说明：`001_tasks.sql` 本批建立报告/版本/聊天/schema 和导
 
 **修改步骤**：
 
-- [ ] 正文、版本和 `report.ready` 先提交；随后创建 PDF/DOCX/MD 导出任务，每种格式独立重试。
-- [ ] 幂等键使用报告版本、format 和 renderer_version，内容变化生成新版本；导出只读取冻结正文，不重新跑研究或修改正文。
-- [ ] PublisherAgent 产出最终 Markdown/layout 和元数据，服务端统一导出；独立 CLI 场景保留显式导出适配，避免两边重复生成文件。
-- [ ] 提供 GET 导出列表与 POST 单项重试接口，旧 path 事件保留为兼容通知；文件名使用服务端 ID，下载校验产物归属与版本。
-- [ ] 导出结果更新对应任务视图但不覆盖 task succeeded；草稿导出带审核状态说明，与“已验证报告”区分。
+- [x] 正文、版本和 `report.ready` 先提交；随后创建 PDF/DOCX/MD 导出任务，每种格式独立重试。
+- [x] 幂等键使用报告版本、format 和 renderer_version，内容变化生成新版本；导出只读取冻结正文，不重新跑研究或修改正文。
+- [x] PublisherAgent 产出最终 Markdown/layout 和元数据，服务端统一导出；独立 CLI 场景保留显式导出适配，避免两边重复生成文件。
+- [x] 提供 GET 导出列表与 POST 单项重试接口，旧 path 事件保留为兼容通知；文件名使用服务端 ID，下载校验产物归属与版本。
+- [x] 导出结果更新对应任务视图但不覆盖 task succeeded；M1 仅导出冻结终稿，执行成功不表示审核通过，不标为“已验证报告”。
 
 **验收**：新增 `tests/backend/test_export_jobs.py`；模拟 PDF 原生库不可用、DOCX 成功、重复重试、修改正文后旧导出仍可定位。Linux 容器执行真实 PDF/DOCX 小文档导出，不调用研究模型。
 
@@ -820,19 +822,19 @@ def test_valid_negative_score_is_complete_but_not_a_pass():
 
 四项是交付主题，不是要求按 A→B→C→D 完全串行。D 的样本、网络隔离和基线从第一阶段建立，之后每项改动都能对照。
 
-当前任务清单（2026-10-26）：
+当前任务清单（2026-10-30）：
 
 - [x] M0-01：运行上下文、研究结果、前后端请求/状态/事件契约及共享类型样本。
 - [x] M0-02：任务/节点评测契约、运行 manifest、错误状态和实际评分分母。
 - [x] M0-03：8 个任务、8 个节点的自编开发集及证据坐标/hash/引用校验。
 - [x] M0-04：实例隔离回放、runner 网络阻断、统一 CLI 与既有结果汇总。
 - [x] M0-05：SQLite/LangGraph 跨进程恢复小样、154 项离线测试、前端生产构建及实施记录。
-- [ ] M1：进行中。批次 02 / A1 的代码、离线和 Linux 容器验收已完成，真实数据未迁移。下一批次为 03 / A2–A3；A2–A7 尚未实施，按依赖推进。
+- [x] M1：A1–A7 代码、隔离验收及本地部署切换完成。用户明确授权后，停写并创建一致性备份、升级实际数据库 v1→v4、启动新版前后端；报告/聊天数量保持 0，备份恢复和只读健康检查通过。单 API/单研究 worker，basic 阶段、detailed 完成章节、deep 完成分支可复用，多代理仅最终结果；人工审核和节点恢复属 M2/B3。
 - [ ] M2：统一入口与持久审核闭环。
 - [ ] M3：最小证据链与原文核查。
 - [ ] M4：全路径覆盖、真实任务/智能体评测、裁判校准与 CI。
 
-完成项仅对应 M0 范围；D2 完整标注集、D3 在线模式和 A/B/C/D 整体交付仍待实施。详细证据见 [M0 实施清单](m0-implementation-plan.zh-CN.md)。
+M1 已完成本地部署切换，不等于 M2–M4 交付。下一步按批次 06 推进 B1/B2 的剩余静态/嵌入入口统一、B3/B4 持久审核。D2 完整标注集、D3 在线模式和 B/C/D 整体交付仍待实施。Next.js 桌面/手机统一入口作为 M1 的恢复依赖已先行完成。
 
 | 阶段 | 依赖 | 工作范围 | 阶段退出标准 |
 |---|---|---|---|
@@ -877,7 +879,9 @@ def test_valid_negative_score_is_complete_but_not_a_pass():
 
 ## 9. 配置、接口与部署清单
 
-### 9.1 拟新增配置
+### 9.1 当前与拟新增配置
+
+本表为完整路线图设计值，不能直接视为当前支持。M1 实际名称/default 以 [部署配置表](deployment.md#persistent-research-tasks-m1) 为准：`TDR_WORKER_LEASE_SECONDS=30`、`TDR_WORKER_POLL_SECONDS=0.1`、`TDR_WORKER_SHUTDOWN_SECONDS=5`、`TDR_HTTP_WAIT_SECONDS=30`、`TDR_EVENT_RETENTION=20000`、`TDR_EXPORT_MAX_SECONDS=180`。当前单 worker，无自动研究重试；其余并发/审核/evidence 开关尚未实现。
 
 集中由 `backend/server/settings.py` 或对应 eval settings 解析；模型/检索现有设置仍由 Config 管理。新增开关应在构造期读取，不在模块 import 时固定，便于测试与多任务隔离。
 
@@ -899,7 +903,9 @@ def test_valid_negative_score_is_complete_but_not_a_pass():
 
 保持供应商原有密钥名称，不为改名复制真实密钥。旧 REPORT_STORE_PATH 仅供迁移/兼容读取，新增数据库设置使用 TDR_ 前缀；.env.example 只写占位值与说明，不创建真实 .env。文件存储与数据库需一起备份，单独备份数据库不能恢复已删除的证据原文。
 
-### 9.2 接口完整清单（拟新增）
+### 9.2 接口完整清单（当前与拟新增）
+
+M1 已提供 research 提交/查询/取消/恢复/事件和 WS；导出实际路由为 `/api/research/{id}/exports`、`/exports/{format}/retry`、`/exports/{format}/download?job_id=...`，归属与不可变版本在 job 上校验。下面的 feedback、claims、evidence 与报告版本路由仍为 M2/M3 设计，不是当前可调用接口。
 
 | 方法与路由 | 输入/输出与异常 |
 |---|---|
@@ -922,7 +928,7 @@ def test_valid_negative_score_is_complete_but_not_a_pass():
 
 ## 10. 验证命令与验收操作
 
-下列是**实现相应文件后**的执行命令，本次仅撰写规划，没有运行这些未来测试。根目录 `E:\Deep Researcher`；使用项目业务 Python 环境，不能把 `.venv-graphify` 当作应用验证环境。
+下列保留完整方案的未来验证命令，部分 B/C 文件尚未实现。M1 本次实际执行命令和结果见 [validation](validation.md)；不能把下面尚不存在的测试写为通过。根目录 `E:\Deep Researcher`，不能把 `.venv-graphify` 当作应用环境。
 
 ### 10.1 后端与核心离线验证
 
@@ -1004,7 +1010,7 @@ python -m evals.report --runs evals/results/task-smoke evals/results/agent-smoke
 
 ## 12. 交付物与完成清单
 
-- [ ] A：数据库迁移脚本、TaskService/worker、恢复与事件协议、独立导出、服务端历史及部署文档。
+- [x] A：数据库迁移脚本、TaskService/worker、恢复与事件协议、独立导出、服务端历史及文档，代码/隔离验收和授权后的 A7 本地切换均已完成；能力边界见 M1 记录。
 - [ ] B：统一研究客户端、静态/嵌入兼容、持久人工审核、明确审核路由、桌面/移动 E2E。
 - [ ] C：来源快照与片段模型、上下文身份保留、claim/citation 绑定、版本发布校验、原文查看 UI、模式覆盖矩阵。
 - [ ] D：版本化任务/节点数据集、三种运行模式、任务/智能体指标、裁判校准、基线对照、离线 CI 与手动在线评测入口。
@@ -1012,4 +1018,4 @@ python -m evals.report --runs evals/results/task-smoke evals/results/agent-smoke
 - [ ] 逐步更新 Graphify 图和 `docs/project-chain.zh-CN.md`，区分静态依赖和实际运行验证；图输出仍作为本地产物，不自动提交。
 - [ ] 保存实际测试命令、构建与迁移结果；检查真实 .env、凭据、生成报告、数据库、缓存和评测运行结果均未进入提交候选。
 
-本方案的实施入口是 M0 与批次 01：先固定运行/评测契约和小型回放基线，再依次交付可独立验收的改动。完成标准是四项各自的用户流程与验收证据齐全，而不只是新增了对应目录或接口。
+M0 与 M1 已完成当前范围。下一实施入口为批次 06 / B1–B2 剩余入口适配，再推进 B3–B6。完成标准仍是各工作包的用户流程与验收证据齐全，不因已有目录或接口提前完成 M2–M4。

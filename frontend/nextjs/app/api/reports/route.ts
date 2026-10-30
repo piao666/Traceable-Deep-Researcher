@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_TDR_API_URL || 'http://localhost:8000';
@@ -32,7 +34,7 @@ export async function GET(request: Request) {
     
     console.log(`GET ${endpoint} - Proxying request to backend`);
     
-    const response = await fetch(`${backendUrl}${endpoint}`);
+    const response = await fetch(`${backendUrl}${endpoint}`,{cache:'no-store'});
     
     if (!response.ok) {
       // Handle backend errors
@@ -109,4 +111,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

@@ -110,6 +110,7 @@ export const useWebSocket = (
           
           if (data.type === 'error') {
             console.error(`Server error: ${data.output}`);
+            setLoading(false);
           } else if (data.type === 'human_feedback' && data.content === 'request') {
             setQuestionForHuman(data.output);
             setShowHumanFeedback(true);

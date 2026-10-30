@@ -49,6 +49,8 @@ export interface ResearchTaskRequest {
   mcp_enabled?: boolean;
   mcp_config_refs?: string[];
   include_human_feedback?: boolean;
+  max_search_results?: number | null;
+  mcp_strategy?: 'fast' | 'deep';
 }
 
 export interface TaskEvent {

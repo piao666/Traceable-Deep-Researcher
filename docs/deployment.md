@@ -20,7 +20,61 @@ For an existing `reports.json`, stop old writers and follow [history migration](
 instead. API startup validates schema and legacy import receipts; it refuses an
 uninitialized/incompatible database or an unimported/changed legacy file. API
 processes do not perform schema upgrades. Keep the SQLite database on a local
-disk; this release does not provide a distributed database or task queue.
+disk. Tasks use a durable SQLite queue on this host; distributed operation is
+not supported. See the schema-v4 upgrade steps in [migration](migration.md).
+
+## Persistent research tasks (M1)
+
+Run exactly one API process (`TDR_API_WORKERS=1`); the container entry point
+rejects larger values. It owns one research worker and a separate export worker.
+Queued tasks survive replacement. Expired running attempts become interrupted,
+then an operator can resume compatible checkpoints. Temporary per-request keys
+and inline MCP credentials remain in memory; after process loss create a new
+request with those credentials. Environment-configured providers remain usable.
+
+The following settings are implemented; the broader roadmap includes future
+settings which must not be mistaken for current switches:
+
+| Setting | Default | Behavior |
+|---|---|---|
+| `TDR_WORKER_LEASE_SECONDS` | `30` | Research lease; renewed during execution |
+| `TDR_WORKER_POLL_SECONDS` | `0.1` | Queue polling interval |
+| `TDR_WORKER_SHUTDOWN_SECONDS` | `5` | Bounded graceful shutdown |
+| `TDR_HTTP_WAIT_SECONDS` | `30` | Legacy foreground wait; timeout returns 202 |
+| `TDR_EVENT_RETENTION` | `20000` | Events per task; 0 retains all; old cursors resync |
+| `TDR_EXPORT_MAX_SECONDS` | `180` | Per-format rendering timeout |
+| `TDR_EXPORT_RENDERER_VERSION` | `v1` | Export identity; increment after renderer changes |
+
+POST `/api/research` returns 202 and `research_id`. Send `Idempotency-Key` to
+retry a lost response safely. GET the task, its `/events?after_seq=...`, or list
+with `limit/offset/status`. POST task `/cancel` or `/resume` explicitly. Each
+task exposes `/exports`, `/exports/{format}/retry` and an owned download URL.
+Next.js proxies all of these without caching. Desktop and mobile open
+`/tasks/{id}`; refresh only reconnects. `/history` reads server pages and offers
+explicit import of old browser records. Legacy `/report/` and WS `start` delegate
+to the same queue; closing the browser does not cancel a task.
+
+The time budget is enforced. Explicit tool/token/cost hard limits, human review,
+network-disallowed policies and unresolved managed MCP references are rejected
+until their execution adapters are implemented. Multi-agent mode currently only
+supports default web sources and final-result recovery. Execution success is not
+fact approval or verified evidence lineage. Default request time budget is 300s.
+
+Back up both `data/` and `outputs/`. Independent exports are under
+`outputs/exports/`; do not prune them with a generic report cleanup script.
+`python scripts/cleanup_orphan_exports.py` lists old unreferenced generated
+files; deletion requires explicit `--apply` and preserves active jobs, referenced
+files, user filenames and symlinks. Default age threshold is 24 hours.
+
+Offline Linux acceptance:
+
+```sh
+docker build -t tdr-task-validation:local .
+python scripts/verify_task_container.py --image tdr-task-validation:local
+```
+
+The script uses isolated volumes, fixed provider output, no runtime network and
+native PDF/DOCX/Markdown generation, then cleans only its labeled resources.
 
 `GET /api/reports` retains `{reports: [...]}` and accepts optional `limit` (1–500)
 and `offset` (nonnegative); omitted limit retains the legacy full-list behavior.

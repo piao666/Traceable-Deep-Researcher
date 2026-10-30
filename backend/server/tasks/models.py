@@ -1,4 +1,4 @@
-"""Version one request/event contracts. M0 does not register new HTTP routes."""
+"""Version one contracts for persistent research tasks and events."""
 
 from datetime import datetime, timezone
 from enum import Enum
@@ -79,6 +79,8 @@ class ResearchTaskRequest(ContractModel):
     # Only identifiers of server-managed configurations cross this boundary.
     mcp_config_refs: list[NonEmptyString] = Field(default_factory=list)
     include_human_feedback: bool = False
+    max_search_results: Annotated[int, Field(strict=True, ge=1, le=20)] | None = None
+    mcp_strategy: Literal['fast', 'deep'] = 'fast'
 
     @field_validator("report_type")
     @classmethod
