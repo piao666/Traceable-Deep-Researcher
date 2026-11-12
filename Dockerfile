@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Stage 1: Browser and build tools installation
 # Python 3.12+ required for LangChain v1
-FROM python:3.14-slim-bookworm AS install-browser
+FROM python:3.15-slim-bookworm AS install-browser
 
 # Use Debian's browser packages without the optional desktop services.
 # Cache downloads so interrupted builds can resume without fetching them again.
